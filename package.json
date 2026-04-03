@@ -1,0 +1,71 @@
+{
+  "name": "@plurio/intake",
+  "version": "2.0.0",
+  "description": "Client-side traffic source detection, cookie-based attribution, and click ID tracking",
+  "main": "dist/intake.js",
+  "module": "dist/intake.esm.js",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "build": "vite build && vite build --config vite.gtm.config.ts",
+    "build:gtm": "vite build --config vite.gtm.config.ts",
+    "build:standard": "vite build",
+    "dev": "vite build --watch",
+    "serve": "python3 -m http.server 8000",
+    "serve:win": "python -m http.server 8000",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:debug": "playwright test --debug",
+    "test:all": "npm run test:run && npm run test:e2e"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.28.5",
+    "@babel/plugin-proposal-optional-catch-binding": "^7.18.6",
+    "@babel/plugin-proposal-optional-chaining": "^7.21.0",
+    "@babel/plugin-transform-block-scoping": "^7.28.5",
+    "@babel/plugin-transform-optional-catch-binding": "^7.27.1",
+    "@babel/preset-env": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "@playwright/test": "^1.57.0",
+    "@rollup/plugin-babel": "^6.1.0",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@types/node": "^24.10.1",
+    "core-js": "^3.47.0",
+    "terser": "^5.46.1",
+    "vite": "^7.2.4",
+    "vite-plugin-babel": "^1.3.2"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/elly-analytics/Intake.git"
+  },
+  "keywords": [
+    "analytics",
+    "attribution",
+    "utm",
+    "tracking",
+    "click-id",
+    "traffic-source",
+    "cookies",
+    "consent",
+    "gdpr",
+    "dataLayer",
+    "gtm",
+    "gclid",
+    "fbclid",
+    "multi-touch"
+  ],
+  "author": "Plurio",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/elly-analytics/Intake/issues"
+  },
+  "homepage": "https://intake.plurio.ai"
+}

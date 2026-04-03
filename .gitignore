@@ -1,0 +1,24 @@
+*.swp
+*~
+*.iws
+*.log
+.project
+.DS_Store
+.sass-cache
+.idea
+.ruby-version
+.ruby-gemset
+node_modules
+bower_components
+
+# Next.js build output (do not commit)
+website/.next/
+website/out/
+
+# Manual HTML test files (dev only)
+test/
+
+# Legacy and build artifacts
+v1-legacy/
+playwright-report/
+test-results/
