@@ -7,7 +7,7 @@ const features = [
     icon: '\u{1F6E1}',
     title: 'Privacy-First',
     description:
-      'Built for Consent Mode v2. Supports 10+ CMPs including OneTrust, Cookiebot, Axeptio, and Didomi. No cookies when consent is denied.',
+      'Built for Consent Mode v2. Supports 10+ CMPs including OneTrust, Cookiebot, Axeptio, and Didomi. When consent is denied, attribution survives via URL pass-through — no cookies, no lost sources.',
   },
   {
     icon: '\u{1F4CA}',
@@ -31,7 +31,7 @@ const features = [
     icon: '\u{1F512}',
     title: 'PII Hashing for Identity Resolution',
     description:
-      'Visitors fill out a form — Intake hashes their email and phone with SHA-256 right in the browser. Raw PII never leaves the page. Send secure hashes to your CRM or ad platform to match anonymous sessions to real leads and offline conversions — without compliance risk.',
+      'Visitors fill out a form — Intake hashes their email and phone with SHA-256 right in the browser. Raw PII never leaves the page. Send secure hashes to your ad platform to match anonymous sessions to real leads and offline conversions — without compliance risk.',
   },
   {
     icon: '\u{1F310}',
@@ -55,11 +55,17 @@ const features = [
     icon: '\u{1F4E6}',
     title: 'Zero Dependencies',
     description:
-      'No external dependencies. ~37KB UMD bundle. ESM and GTM builds included. Simple, lightweight, fast.',
+      'No external dependencies. ~14 kB gzipped. ESM and GTM builds included. Simple, lightweight, fast.',
+  },
+  {
+    icon: '\u{1F5A5}',
+    title: 'Server-Side Ready',
+    description:
+      'Pair Intake with your own server container and route events through your server instead of Google. Click IDs, consent state, and the full touchpoint chain arrive server-side ready for deduplicated CAPI/Ads API calls.',
   },
   {
     icon: '\u{1F680}',
-    title: 'Easy Setup',
+    title: 'Drop-in Install',
     description:
       '3 lines of code to get started. npm install, import, init. Works with any framework or vanilla JS.',
   },

@@ -100,29 +100,26 @@ intk.init({
     lang: 'javascript',
   },
   {
-    label: 'GTM / Script Tag',
-    code: `<!-- Option 1: Script tag (UMD) -->
-<script src="intake.js"></script>
+    label: 'Google Tag Manager',
+    code: `<!--
+  Easiest way: import our ready-made container
+  → https://github.com/plurio/Intake/releases/latest
+     (download intake-gtm-container.json, then GTM → Admin → Import Container)
+
+  Or add it manually as a Custom HTML tag with trigger "All Pages":
+-->
+<script src="https://cdn.jsdelivr.net/npm/@plurio/intake@2/dist/intake.gtm.js"></script>
 <script>
   intk.init({
     domain: 'yoursite.com',
-    data_layer: true, // Push to dataLayer (default)
+    data_layer: true,        // pushes intk_ready to dataLayer
     callback: function(data) {
-      // Fill hidden form fields
-      document.querySelector('[name="utm_source"]').value = data.current.src;
-      document.querySelector('[name="utm_medium"]').value = data.current.mdm;
+      // Fill hidden form fields with attribution
       document.querySelector('[name="first_source"]').value = data.first.src;
+      document.querySelector('[name="first_medium"]').value = data.first.mdm;
+      document.querySelector('[name="first_campaign"]').value = data.first.cmp;
     }
   });
-</script>
-
-<!-- Option 2: GTM Custom HTML tag -->
-<!-- Paste the full contents of intake.gtm.js inline -->
-<script>
-  // ... contents of intake.gtm.js (ES5-compatible) ...
-
-  intk.init({ domain: 'yoursite.com', lifetime: 6 });
-  // dataLayer receives: intk_ready, intk_user_profile
 </script>`,
     lang: 'html',
   },
@@ -143,7 +140,7 @@ export default async function CodeExamples() {
     <section id="code-examples" className="py-20 bg-surface-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <SectionHeading
-          badge="Code Examples"
+          badge="Setup Examples"
           title="Simple, Powerful API"
           description="Get started in 3 lines of code. From basic setup to advanced multi-touch attribution."
         />

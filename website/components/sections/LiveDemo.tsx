@@ -1,61 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
 import DataCard from '../ui/DataCard';
-
-interface IntkSource {
-  typ: string;
-  src: string;
-  mdm: string;
-  cmp: string;
-  cnt: string;
-  trm: string;
-}
-
-interface IntkExtra {
-  fd: string;
-  ep: string;
-  rf: string;
-}
-
-interface IntkSession {
-  pgs: number | string;
-  cpg: string;
-}
-
-interface IntkUdata {
-  vst: number | string;
-  uag: string;
-  uip?: string;
-}
-
-interface IntkTouchpoint {
-  typ: string;
-  src: string;
-  mdm: string;
-  cmp: string;
-  ts: number;
-}
-
-interface IntkData {
-  current: IntkSource;
-  current_add: IntkExtra;
-  first: IntkSource;
-  first_add: IntkExtra;
-  session: IntkSession;
-  udata: IntkUdata;
-  touchpoints?: { touchpoints: IntkTouchpoint[] };
-  click_ids?: Record<string, string>;
-}
-
-declare global {
-  interface Window {
-    intk: {
-      init: (config?: any) => void;
-      get: IntkData;
-    };
-  }
-}
+import { useIntakeData } from '../../hooks/useIntakeData';
+import type { IntkSource, IntkExtra } from '../../hooks/useIntakeData';
 
 function sourceRows(label: string, src: IntkSource, extra: IntkExtra) {
   return [
@@ -89,34 +36,44 @@ function SkeletonCard({ title }: { title: string }) {
   );
 }
 
+const DEMO_LINKS = [
+  {
+    label: 'Google Ads',
+    description: 'Paid search click with gclid',
+    query:
+      '?utm_source=google&utm_medium=cpc&utm_campaign=intake_demo&utm_content=hero&gclid=demo_gclid_123',
+    accent: 'bg-brand-50 text-brand-700 ring-brand-200 hover:bg-brand-100',
+  },
+  {
+    label: 'Facebook Ads',
+    description: 'Paid social click with fbclid',
+    query:
+      '?utm_source=facebook&utm_medium=cpc&utm_campaign=intake_demo&utm_content=hero&fbclid=demo_fbclid_456',
+    accent: 'bg-sky-50 text-sky-700 ring-sky-200 hover:bg-sky-100',
+  },
+  {
+    label: 'Google organic',
+    description: 'Unpaid search result click',
+    query: '?utm_source=google&utm_medium=organic&utm_campaign=intake_demo',
+    accent:
+      'bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100',
+  },
+  {
+    label: 'Product Hunt referral',
+    description: 'Referral traffic from an external site',
+    query: '?utm_source=producthunt&utm_medium=referral&utm_campaign=launch',
+    accent:
+      'bg-amber-50 text-amber-700 ring-amber-200 hover:bg-amber-100',
+  },
+];
+
 export default function LiveDemo() {
-  const [data, setData] = useState<IntkData | null>(null);
+  const data = useIntakeData();
 
-  useEffect(() => {
-    function tryInit() {
-      if (typeof window !== 'undefined' && window.intk) {
-        window.intk.init({
-          domain: window.location.hostname,
-          callback: function () {
-            setData({ ...window.intk.get });
-          },
-        });
-        // Also read synchronously in case callback already fired
-        if (window.intk.get?.current) {
-          setData({ ...window.intk.get });
-        }
-      } else {
-        // Retry if script hasn't loaded yet
-        setTimeout(tryInit, 200);
-      }
-    }
-    tryInit();
-  }, []);
-
-  const demoUrl =
+  const makeUrl = (query: string) =>
     typeof window !== 'undefined'
-      ? `${window.location.origin}${window.location.pathname}?utm_source=test&utm_medium=demo&utm_campaign=intake_demo`
-      : '/?utm_source=test&utm_medium=demo&utm_campaign=intake_demo';
+      ? `${window.location.origin}${window.location.pathname}${query}`
+      : `/${query}`;
 
   return (
     <section id="live-demo" className="py-20 bg-surface-50">
@@ -133,20 +90,31 @@ export default function LiveDemo() {
           Intake is running on this page right now. Below is your real attribution data.
         </p>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-surface-400">
-            Try visiting with UTM parameters:{' '}
-            <a
-              href={demoUrl}
-              onClick={(e) => {
-                e.preventDefault();
-                window.location.href = demoUrl;
-              }}
-              className="text-brand-600 hover:underline font-mono text-xs break-all"
-            >
-              ?utm_source=test&utm_medium=demo
-            </a>
+        {/* Demo source links — click in sequence to build a multi-touch chain */}
+        <div className="mt-8 mx-auto max-w-3xl rounded-xl border border-surface-200 bg-white p-5 sm:p-6 shadow-card">
+          <p className="text-sm font-medium text-surface-900">
+            Simulate a multi-touch journey
           </p>
+          <p className="mt-1 text-sm text-surface-500">
+            Click the links below in sequence and watch the touchpoint chain
+            build up. Direct traffic is excluded from attribution.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {DEMO_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={makeUrl(link.query)}
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ring-1 ring-inset transition-colors ${link.accent}`}
+                title={link.description}
+              >
+                {link.label}
+                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.667l3-3z" />
+                  <path d="M11.603 7.963a.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.667l-3 3a2.5 2.5 0 01-3.536-3.536l1.225-1.224a.75.75 0 00-1.061-1.06l-1.224 1.224a4 4 0 105.656 5.656l3-3a4 4 0 00-.225-5.865z" />
+                </svg>
+              </a>
+            ))}
+          </div>
         </div>
 
         <div className="mt-12 grid md:grid-cols-2 gap-6">
@@ -222,6 +190,9 @@ export default function LiveDemo() {
                   value: `${tp.src} / ${tp.mdm}`,
                 }))}
               />
+              <p className="mt-2 text-xs text-surface-400">
+                Direct traffic is excluded — only significant sources (utm, organic, referral) create touchpoints.
+              </p>
             </div>
           )}
       </div>

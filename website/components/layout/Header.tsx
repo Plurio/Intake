@@ -5,10 +5,10 @@ import Button from '../ui/Button';
 
 const navLinks = [
   { label: 'Features', href: '#features' },
-  { label: 'Code', href: '#code-examples' },
+  { label: 'Demo', href: '#live-demo' },
   { label: 'Attribution', href: '#attribution' },
   { label: 'Privacy', href: '#privacy' },
-  { label: 'Integrations', href: '#integrations' },
+  { label: 'Get Started', href: '#getting-started' },
   { label: 'FAQ', href: '#faq' },
 ];
 
@@ -71,7 +71,7 @@ export default function Header() {
 
           <div className="hidden md:flex items-center gap-3">
             <a
-              href="https://github.com/elly-analytics/Intake"
+              href="https://github.com/plurio/Intake"
               target="_blank"
               rel="noopener noreferrer"
               className="text-surface-500 hover:text-surface-700 transition-colors"

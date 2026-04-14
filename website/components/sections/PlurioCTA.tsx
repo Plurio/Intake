@@ -31,7 +31,8 @@ export default function PlurioCTA() {
             <div className="relative grid lg:grid-cols-2 gap-10 items-start">
               <div>
                 <div className="flex items-center gap-3 mb-6">
-                  <span className="text-xl font-bold text-white">Plurio</span>
+                  <img src="/logo/plurio-icon.svg" alt="Plurio" className="h-8 w-8 rounded-lg" />
+                  <img src="/logo/plurio-logo.svg" alt="Plurio" className="h-5" />
                   <span className="inline-flex items-center rounded-full bg-brand-500/20 px-2.5 py-0.5 text-xs font-medium text-brand-300 ring-1 ring-inset ring-brand-500/30">
                     AI Agent for Performance Marketing
                   </span>

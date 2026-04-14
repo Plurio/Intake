@@ -1,21 +1,11 @@
-import Badge from '../ui/Badge';
 import Button from '../ui/Button';
-import CodeBlock from '../ui/CodeBlock';
-
-const heroCode = `import intk from '@plurio/intake';
-
-intk.init({ domain: 'yoursite.com' });
-
-// Access attribution data
-console.log(intk.get.current);
-// → { typ: 'utm', src: 'google', mdm: 'cpc',
-//     cmp: 'spring_sale', cnt: 'banner', trm: 'shoes' }`;
+import HeroLive from './HeroLive';
 
 const stats = [
   { value: '11', label: 'Click IDs' },
   { value: '5', label: 'Attribution Models' },
   { value: '10+', label: 'CMPs Supported' },
-  { value: '~37KB', label: 'Gzipped' },
+  { value: '~14 kB', label: 'Gzipped' },
 ];
 
 export default function Hero() {
@@ -28,23 +18,22 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           {/* Left */}
           <div>
-            <Badge variant="brand" className="mb-6">v2.0 — Privacy-First</Badge>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-surface-900 leading-[1.1]">
-              Your First Step to{' '}
-              <span className="text-brand-600">Full Funnel Analytics.</span>
+            <h1 className="text-3xl sm:text-5xl font-bold tracking-tight text-surface-900 leading-[1.1]">
+              First Step to{' '}
+              <span className="text-brand-600">Full Funnel Analytics</span>
             </h1>
-            <p className="mt-6 text-xl text-surface-700 max-w-xl leading-relaxed font-medium">
-              One lightweight library that captures every touchpoint — from first ad click to closed deal. Privacy-compliant, ready for any analytics stack.
+            <p className="mt-6 text-lg sm:text-xl text-surface-700 max-w-xl leading-relaxed font-medium">
+              A privacy-first JavaScript library for your website that captures every touchpoint — from first click to conversion. Ready for any analytics stack.
             </p>
             <p className="mt-3 text-base text-surface-500 max-w-xl leading-relaxed">
-              Multi-touch attribution, 11 click IDs, Consent Mode v2, PII hashing — all in ~37KB with zero dependencies. Install once, feed dashboards, CRM, and revenue reports.
+              Drop it on your site and Intake auto-computes multi-touch attribution, preserves click IDs for server-side use, survives consent denial via URL pass-through, and stitches CRM records back to the visitors who created them — all in ~14 kB with zero dependencies.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
               <Button href="#getting-started" size="lg">
                 Get Started
               </Button>
               <Button
-                href="https://github.com/elly-analytics/Intake"
+                href="https://github.com/plurio/Intake"
                 variant="secondary"
                 size="lg"
               >
@@ -59,7 +48,7 @@ export default function Hero() {
               </Button>
             </div>
             {/* Stats */}
-            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3">
+            <div className="mt-10 grid grid-cols-2 sm:flex sm:flex-wrap gap-x-8 gap-y-3">
               {stats.map((stat) => (
                 <div key={stat.label} className="flex items-center gap-2">
                   <span className="text-lg font-bold text-surface-900">{stat.value}</span>
@@ -69,17 +58,9 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* Right — code snippet */}
-          <div className="relative">
-            <div className="rounded-xl border border-surface-200 bg-white shadow-card overflow-hidden">
-              <div className="flex items-center gap-1.5 px-4 py-3 border-b border-surface-100 bg-surface-50">
-                <div className="h-3 w-3 rounded-full bg-surface-200" />
-                <div className="h-3 w-3 rounded-full bg-surface-200" />
-                <div className="h-3 w-3 rounded-full bg-surface-200" />
-                <span className="ml-3 text-xs text-surface-400 font-mono">app.js</span>
-              </div>
-              <CodeBlock code={heroCode} lang="javascript" />
-            </div>
+          {/* Right — live attribution */}
+          <div className="relative min-w-0">
+            <HeroLive />
           </div>
         </div>
       </div>

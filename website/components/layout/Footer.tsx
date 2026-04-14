@@ -27,13 +27,13 @@ export default function Footer() {
             </a>
           </div>
           <div className="flex items-center gap-6 text-sm text-surface-500">
-            <a href="https://github.com/elly-analytics/Intake" target="_blank" rel="noopener noreferrer" className="hover:text-surface-700 transition-colors">
+            <a href="https://github.com/plurio/Intake" target="_blank" rel="noopener noreferrer" className="hover:text-surface-700 transition-colors">
               GitHub
             </a>
             <a href="https://www.npmjs.com/package/@plurio/intake" target="_blank" rel="noopener noreferrer" className="hover:text-surface-700 transition-colors">
               npm
             </a>
-            <a href="https://github.com/elly-analytics/Intake#readme" target="_blank" rel="noopener noreferrer" className="hover:text-surface-700 transition-colors">
+            <a href="https://github.com/plurio/Intake#readme" target="_blank" rel="noopener noreferrer" className="hover:text-surface-700 transition-colors">
               Docs
             </a>
             <a href="https://www.plurio.ai/" target="_blank" rel="noopener noreferrer" className="hover:text-surface-700 transition-colors">

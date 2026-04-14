@@ -1,6 +1,11 @@
 # Intake
 
-Privacy-first JavaScript library for client-side traffic source detection, cookie-based attribution, and click ID tracking.
+**The first step to full-funnel analytics.** Intake is a privacy-first JavaScript library for client-side traffic source detection, multi-touch attribution, click ID tracking, and CRM identity resolution — in ~14 kB with zero dependencies.
+
+Built by the team behind [**Plurio**](https://www.plurio.ai/), an AI agent for performance marketing. Pair Intake on your site with Plurio to turn raw attribution data into decisions: optimisation rules, LTV/revenue automation, and plain-English queries over your ad, CRM, and backend data.
+
+- Website: [intake.plurio.ai](https://intake.plurio.ai)
+- Plurio: [plurio.ai](https://www.plurio.ai/)
 
 [![npm version](https://img.shields.io/npm/v/@plurio/intake.svg)](https://www.npmjs.com/package/@plurio/intake)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
