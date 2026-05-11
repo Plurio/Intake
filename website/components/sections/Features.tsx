@@ -11,7 +11,7 @@ const features = [
   },
   {
     icon: '\u{1F4CA}',
-    title: 'Multi-Touch Attribution',
+    title: '5 attribution models',
     description:
       '5 attribution models — first touch, last touch, linear, U-shaped, and time decay. Tracks up to 50 touchpoints per visitor.',
   },

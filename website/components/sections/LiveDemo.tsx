@@ -90,33 +90,6 @@ export default function LiveDemo() {
           Intake is running on this page right now. Below is your real attribution data.
         </p>
 
-        {/* Demo source links — click in sequence to build a multi-touch chain */}
-        <div className="mt-8 mx-auto max-w-3xl rounded-xl border border-surface-200 bg-white p-5 sm:p-6 shadow-card">
-          <p className="text-sm font-medium text-surface-900">
-            Simulate a multi-touch journey
-          </p>
-          <p className="mt-1 text-sm text-surface-500">
-            Click the links below in sequence and watch the touchpoint chain
-            build up. Direct traffic is excluded from attribution.
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
-            {DEMO_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={makeUrl(link.query)}
-                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ring-1 ring-inset transition-colors ${link.accent}`}
-                title={link.description}
-              >
-                {link.label}
-                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.667l3-3z" />
-                  <path d="M11.603 7.963a.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.667l-3 3a2.5 2.5 0 01-3.536-3.536l1.225-1.224a.75.75 0 00-1.061-1.06l-1.224 1.224a4 4 0 105.656 5.656l3-3a4 4 0 00-.225-5.865z" />
-                </svg>
-              </a>
-            ))}
-          </div>
-        </div>
-
         <div className="mt-12 grid md:grid-cols-2 gap-6">
           {data ? (
             <>
@@ -195,6 +168,33 @@ export default function LiveDemo() {
               </p>
             </div>
           )}
+
+        {/* Demo source links — click in sequence to build a multi-touch chain */}
+        <div className="mt-8 mx-auto max-w-3xl rounded-xl border border-surface-200 bg-white p-5 sm:p-6 shadow-card">
+          <p className="text-sm font-medium text-surface-900">
+            Simulate a multi-touch journey
+          </p>
+          <p className="mt-1 text-sm text-surface-500">
+            Click the links below in sequence and watch the touchpoint chain
+            build up. Direct traffic is excluded from attribution.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            {DEMO_LINKS.map((link) => (
+              <a
+                key={link.label}
+                href={makeUrl(link.query)}
+                className={`inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium ring-1 ring-inset transition-colors ${link.accent}`}
+                title={link.description}
+              >
+                {link.label}
+                <svg className="h-3.5 w-3.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path d="M12.232 4.232a2.5 2.5 0 013.536 3.536l-1.225 1.224a.75.75 0 001.061 1.06l1.224-1.224a4 4 0 00-5.656-5.656l-3 3a4 4 0 00.225 5.865.75.75 0 00.977-1.138 2.5 2.5 0 01-.142-3.667l3-3z" />
+                  <path d="M11.603 7.963a.75.75 0 00-.977 1.138 2.5 2.5 0 01.142 3.667l-3 3a2.5 2.5 0 01-3.536-3.536l1.225-1.224a.75.75 0 00-1.061-1.06l-1.224 1.224a4 4 0 105.656 5.656l3-3a4 4 0 00-.225-5.865z" />
+                </svg>
+              </a>
+            ))}
+          </div>
+        </div>
       </div>
     </section>
   );
