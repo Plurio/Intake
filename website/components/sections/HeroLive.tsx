@@ -68,13 +68,16 @@ export default function HeroLive() {
   return (
     <div id="hero-live" className="relative rounded-xl border border-surface-200 bg-white shadow-card p-6 sm:p-8">
       {/* Live demo badge */}
-      <div className="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-200">
+      <a
+        href="#live-demo"
+        className="absolute top-4 right-4 inline-flex items-center gap-1.5 rounded-full bg-red-50 px-2.5 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-200 no-underline hover:bg-red-100 transition-colors"
+      >
         <span className="relative flex h-2 w-2">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-400 opacity-75"></span>
           <span className="relative inline-flex h-2 w-2 rounded-full bg-red-500"></span>
         </span>
         Live demo
-      </div>
+      </a>
 
       {/* Headline */}
       <p className="text-surface-500 text-lg font-medium">Your source is</p>

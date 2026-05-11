@@ -4,9 +4,18 @@ import './globals.css';
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://intake.plurio.ai'),
-  title: 'Intake — Privacy-First Traffic Attribution',
+  title: 'Intake — Privacy-First Multi-Touch Attribution Library',
   description:
-    'Know where your visitors come from. Privacy-first JavaScript library for traffic source attribution with Consent Mode v2, multi-touch attribution, and 11 click ID tracking.',
+    'Capture UTMs, click IDs, and customer touchpoints across the full funnel. 5 attribution models, CMP-compatible, ~14 kB. Add in 3 lines of code.',
+  keywords: [
+    'multi-touch attribution',
+    'UTM tracking',
+    'click ID capture',
+    'privacy-first analytics',
+    'consent management',
+    'marketing attribution library',
+    'first-party data',
+  ],
   icons: {
     icon: [
       { url: '/favicon.svg', type: 'image/svg+xml' },
@@ -16,10 +25,26 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   openGraph: {
-    title: 'Intake — Privacy-First Traffic Attribution',
+    type: 'website',
+    url: 'https://intake.plurio.ai/',
+    siteName: 'Intake',
+    title: 'Intake — Privacy-First Multi-Touch Attribution Library',
     description:
-      'Privacy-first JavaScript library for traffic source attribution.',
-    images: ['/og-image.png'],
+      'Capture UTMs, click IDs, and customer touchpoints across the full funnel. 5 attribution models, CMP-compatible, ~14 kB. Add in 3 lines of code.',
+    images: [
+      {
+        url: '/og-image.jpg',
+        width: 1024,
+        height: 477,
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Intake — Privacy-First Multi-Touch Attribution Library',
+    description:
+      'Capture UTMs, click IDs, and customer touchpoints across the full funnel. 5 attribution models, CMP-compatible, ~14 kB. Add in 3 lines of code.',
+    images: ['/og-image.jpg'],
   },
 };
 
