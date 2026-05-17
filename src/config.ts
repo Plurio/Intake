@@ -35,9 +35,13 @@ export function resolveConfig(userConfig?: IntkConfig): ResolvedConfig {
   const lifetime = Math.floor(lifetimeMonths * 30 * 24 * 60);
   
   // Session length in minutes
-  const session_length = user.session_length !== undefined 
+  const session_length = user.session_length !== undefined
     ? (checkInt(user.session_length) !== false ? checkInt(user.session_length) as number : 30)
     : 30;
+
+  // Whether a referral arriving during an active session splits the session.
+  // Default: false — preserves legacy behaviour (referral mid-session is ignored).
+  const referral_starts_new_session = user.referral_starts_new_session === true;
   
   // Timezone offset in hours
   const timezone_offset = user.timezone_offset !== undefined 
@@ -159,6 +163,7 @@ export function resolveConfig(userConfig?: IntkConfig): ResolvedConfig {
     organics,
     referrals,
     in_app_browsers,
+    referral_starts_new_session,
     link_decoration
   };
 }

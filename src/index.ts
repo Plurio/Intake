@@ -309,6 +309,7 @@ const intk = {
     const contentParam = resolvedConfig.content_param;
     const promocodeConfig = resolvedConfig.promocode;
     const inAppBrowsers = resolvedConfig.in_app_browsers;
+    const referralStartsNewSession = resolvedConfig.referral_starts_new_session;
     const timezoneOffset = resolvedConfig.timezone_offset;
     const callback = config?.callback;
     const piiCollectionConfig = config?.pii_collection;
@@ -347,9 +348,18 @@ const intk = {
       termParam,
       contentParam,
       promocodeConfig,
-      inAppBrowsers
+      inAppBrowsers,
+      referralStartsNewSession
     );
-    
+
+    // When `referralStartsNewSession` is enabled and a referral lands on top of an
+    // active session, the session is split — for the rest of this page load we
+    // behave as if there were no active session (new source, fresh page counter,
+    // visit++, new touchpoint).
+    const sessionSplitByReferral =
+      hasSession && referralStartsNewSession && newSource.typ === 'referral';
+    const sessionContinues = hasSession && !sessionSplitByReferral;
+
     if (existingFirst) {
       // First source is always preserved
       firstSource = parseTrafficSource(existingFirst);
@@ -369,22 +379,23 @@ const intk = {
     
     // Current source update logic:
     // - UTM and Organic always update current
-    // - Referral updates only if there is no active session
+    // - Referral updates when the session is not continuing (no prior session, or
+    //   the session was just split by this referral via referral_starts_new_session)
     // - Typein never updates (old current is preserved)
     let currentSourceUpdated = false;
     if (existingCurrent) {
       const oldCurrent = parseTrafficSource(existingCurrent);
-      
+
       if (newSource.typ === 'utm' || newSource.typ === 'organic') {
         // UTM and Organic always update
         currentSource = newSource;
         currentSourceUpdated = true;
-      } else if (newSource.typ === 'referral' && !hasSession) {
-        // Referral updates only if no session exists
+      } else if (newSource.typ === 'referral' && !sessionContinues) {
+        // Referral updates when the session does not continue
         currentSource = newSource;
         currentSourceUpdated = true;
       } else {
-        // Typein or referral with active session — do not update
+        // Typein or referral with a continuing session — do not update
         currentSource = oldCurrent;
       }
     } else {
@@ -402,8 +413,9 @@ const intk = {
     setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_current', packMain(currentSource), lifetime, cookieDomain);
     setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_current_add', packExtra(timezoneOffset), lifetime, cookieDomain);
     
-    // Update session (pages_seen)
-    if (existingSession) {
+    // Update session (pages_seen). If the session continues, increment the page
+    // counter; otherwise start fresh at 1 (covers cold visits and referral splits).
+    if (sessionContinues && existingSession) {
       const sessionParsed = parseSessionData(existingSession);
       sessionData = { pgs: sessionParsed.pgs + 1, cpg: window.location.href };
     } else {
@@ -415,8 +427,9 @@ const intk = {
     // Update user data (visits)
     if (existingUdata) {
       const udataParsed = parseUserData(existingUdata);
-      // Visits increment only when there is no active session
-      const newVisits = hasSession ? udataParsed.vst : udataParsed.vst + 1;
+      // Visits increment whenever the session does not continue
+      // (cold visit OR referral split via referral_starts_new_session).
+      const newVisits = sessionContinues ? udataParsed.vst : udataParsed.vst + 1;
       // Use user_ip from config if specified and not the default value
       const finalUserIp = (userIp && userIp !== '(none)') ? userIp : (udataParsed.uip && udataParsed.uip !== '(none)' ? udataParsed.uip : userIp);
       udata = {
@@ -638,13 +651,14 @@ const intk = {
       const contentParam = resolvedConfig.content_param;
       const promocodeConfig = resolvedConfig.promocode;
       const inAppBrowsers = resolvedConfig.in_app_browsers;
+      const referralStartsNewSession = resolvedConfig.referral_starts_new_session;
       const callback = intk._config?.callback;
       const dataLayerEnabled = intk._dataLayerEnabled;
-      
+
       // Check active session
       const existingSession = get('intk_session');
       const hasSession = !!existingSession;
-      
+
       // Detect new traffic source (uses current window.location)
       // In SPA apps, window.location is usually already updated by the time this is called
       const newSource = detectTrafficSource(
@@ -656,22 +670,28 @@ const intk = {
         termParam,
         contentParam,
         promocodeConfig,
-        inAppBrowsers
+        inAppBrowsers,
+        referralStartsNewSession
       );
-      
+
+      // See init() for the rationale — same "session split by referral" rule.
+      const sessionSplitByReferral =
+        hasSession && referralStartsNewSession && newSource.typ === 'referral';
+      const sessionContinues = hasSession && !sessionSplitByReferral;
+
       // Get existing current source
       const existingCurrent = get('intk_current');
       let currentSource: TrafficSource;
       let currentSourceUpdated = false;
-      
+
       // Update current source using the same logic as in init
       if (existingCurrent) {
         const oldCurrent = parseTrafficSource(existingCurrent);
-        
+
         if (newSource.typ === 'utm' || newSource.typ === 'organic') {
           currentSource = newSource;
           currentSourceUpdated = true;
-        } else if (newSource.typ === 'referral' && !hasSession) {
+        } else if (newSource.typ === 'referral' && !sessionContinues) {
           currentSource = newSource;
           currentSourceUpdated = true;
         } else {
@@ -699,9 +719,10 @@ const intk = {
       setIfConsentGranted(consentGranted, 'intk_current', packMain(currentSource), lifetime, cookieDomain);
       setIfConsentGranted(consentGranted, 'intk_current_add', packExtra(timezoneOffset), lifetime, cookieDomain);
       
-      // Update session (pages_seen)
+      // Update session (pages_seen). Reset to 1 when the session does not
+      // continue (cold visit OR referral split via referral_starts_new_session).
       let sessionData: { pgs: number; cpg: string };
-      if (existingSession) {
+      if (sessionContinues && existingSession) {
         const sessionParsed = parseSessionData(existingSession);
         sessionData = { pgs: sessionParsed.pgs + 1, cpg: targetUrl };
       } else {
@@ -752,6 +773,20 @@ const intk = {
     // Get current touchpoint chain
     const chain = intk.get.touchpoints || { touchpoints: [] };
     return getAttribution(chain, model);
+  },
+  /**
+   * Returns a deep-cloned snapshot of `intk.get` — every traffic, identity,
+   * session, touchpoint, click-id, and metadata field the library has collected
+   * so far. Safe to mutate; safe to ship straight to a backend with
+   * `JSON.stringify(intk.toJSON())` (or just `JSON.stringify(intk)`, which
+   * invokes this method automatically per the JS `toJSON` convention).
+   *
+   * Note on timing: async fields (`analytics_ids`, async `pii_hashes`) only
+   * land after the configured `callback` fires a second time. Call this from
+   * inside `callback` to capture the fully-populated payload.
+   */
+  toJSON: function(): IntkData {
+    return JSON.parse(JSON.stringify(intk.get));
   },
   setUserId: function(userId: string | null): void {
     // Set User ID manually

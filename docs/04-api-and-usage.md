@@ -18,7 +18,7 @@ After `intk.init()` has run, you read data from `intk.get` and use the methods b
 **TrafficSource fields:** `typ` (traffic type), `src` (source), `mdm` (medium), `cmp` (campaign), `cnt` (content), `trm` (term).
 **Traffic types:** `'utm'`, `'organic'`, `'referral'`, `'in_app'`, `'typein'`.
 
-`'in_app'` is emitted when a visit has no UTM/click ID, no organic referrer, and no referral, but `navigator.userAgent` matches a known in-app browser (Instagram, Facebook, TikTok, Telegram, etc.). See [Configuration → `in_app_browsers`](./03-configuration.md#in_app_browsers).
+`'in_app'` is emitted when a visit has no UTM/click ID, no organic referrer, and no referral, but `navigator.userAgent` matches a known in-app browser (Instagram, Facebook, TikTok, Telegram, etc.). The 14 named social/messaging defaults emit with `mdm: 'social'` so downstream tools like GA4 route them to the **Organic Social** channel; the generic Android webview falls back to `mdm: 'in_app'`. The `typ` field is `'in_app'` regardless. See [Configuration → `in_app_browsers`](./03-configuration.md#in_app_browsers).
 
 **ExtraData fields:** `fd` (date/time of visit), `ep` (entrance URL), `rf` (referrer URL).
 
@@ -71,6 +71,48 @@ Use when you have `intk.get.touchpoints` (chain of significant sources). Require
 ```javascript
 const result = intk.getAttribution('last');
 console.log(result.credits[0].touchpoint.src);
+```
+
+---
+
+### `intk.toJSON()`
+
+Returns a deep-cloned snapshot of `intk.get` — every traffic, identity, session, touchpoint, click-id, and metadata field collected so far, ready to JSON-serialize and POST to your backend in one request.
+
+- **Returns:** `IntkData` (a fresh plain object — safe to mutate; mutating it does **not** affect the library's internal state).
+- Follows the standard JS `toJSON` convention, so `JSON.stringify(intk)` invokes this automatically.
+
+```javascript
+// Easiest: stringify the whole intk object — toJSON is called for you.
+fetch('/api/attribution', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(intk),
+});
+
+// Or grab the object explicitly and shape it before sending.
+const snapshot = intk.toJSON();
+delete snapshot.metadata; // drop fields you don't want
+fetch('/api/attribution', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(snapshot),
+});
+```
+
+**Timing.** Async fields (`analytics_ids`, async `pii_hashes`) only land after the configured `callback` fires a second time. To capture the fully-populated payload, call `intk.toJSON()` from inside `callback`:
+
+```javascript
+intk.init({
+  /* ...config... */
+  callback: function (data) {
+    fetch('/api/attribution', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(intk.toJSON()),
+    });
+  },
+});
 ```
 
 ---

@@ -280,10 +280,32 @@ describe('core', () => {
         // First visit - should be referral
         const result1 = detectTrafficSource(false);
         expect(result1.typ).toBe('referral');
-        
+
         // Second visit with session - should keep old source (typein)
         const result2 = detectTrafficSource(true);
         expect(result2.typ).toBe('typein'); // Falls back to typein when session exists
+      });
+
+      it('should detect referral mid-session when referralStartsNewSession is true', () => {
+        mockLocation('http://localhost/');
+        mockReferrer('https://example.com/page');
+
+        // Active session present, but the flag is on — referral wins.
+        const result = detectTrafficSource(
+          true,                 // hasSession
+          [],                   // customReferrals
+          [],                   // customOrganics
+          { source: '(direct)', medium: '(none)' },
+          false,                // campaignParam
+          false,                // termParam
+          false,                // contentParam
+          false,                // promocodeConfig
+          [],                   // inAppBrowsers
+          true                  // referralStartsNewSession
+        );
+        expect(result.typ).toBe('referral');
+        expect(result.src).toBe('example.com');
+        expect(result.mdm).toBe('referral');
       });
 
       it('should detect custom referral with display name', () => {
@@ -401,7 +423,9 @@ describe('core', () => {
         const result = callWithInApp();
         expect(result.typ).toBe('in_app');
         expect(result.src).toBe('instagram');
-        expect(result.mdm).toBe('in_app');
+        // Social/messaging defaults emit mdm='social' so GA4 routes them to
+        // the "Organic Social" channel instead of "Direct".
+        expect(result.mdm).toBe('social');
         expect(result.cmp).toBe('(none)');
       });
 

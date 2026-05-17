@@ -388,6 +388,15 @@ export interface IntkConfig {
   organics?: OrganicSource[];
   referrals?: ReferralSource[];
   /**
+   * When true, a referral arriving during an active session ends the current
+   * session and starts a new one (page counter resets to 1, visits increment,
+   * `intk_current` is updated, and a new touchpoint is appended). When false
+   * (default), referrals inside an active session are ignored — same as today.
+   * UTM, organic, in-app and typein detection are unaffected.
+   * @default false
+   */
+  referral_starts_new_session?: boolean;
+  /**
    * In-app browser detection list. Detects webview traffic (Instagram, Facebook,
    * TikTok, Telegram, etc.) via navigator.userAgent when no UTM/click ID/organic/
    * referral signal is present. Without it, such visits fall into 'typein'.
@@ -433,6 +442,7 @@ export interface ResolvedConfig {
   referrals: ReferralSource[];
   /** Always an array; empty when in_app_browsers === false. */
   in_app_browsers: InAppBrowserSource[];
+  referral_starts_new_session: boolean;
   link_decoration: ResolvedLinkDecorationConfig;
 }
 

@@ -81,7 +81,7 @@ These rules are aligned with Google Analytics:
 
 - **UTM and Organic sources** always override any previous source.
 - **Type-in** never overrides a previous source.
-- **Referral source** overrides previous source only if there is no user session at the moment. If it's within the same session — a referral source will never override previous source.
+- **Referral source** overrides previous source only if there is no user session at the moment. If it's within the same session — a referral source will never override previous source (unless [`referral_starts_new_session`](#referral_starts_new_session) is enabled).
 
 **Explanation to referral logic:** sometimes visitor within a current visit (session) comes to a website from a "source" which is not actually a "source". For example, it can be visit from an email service, where he had a registration activation link.
 
@@ -90,6 +90,34 @@ These rules are aligned with Google Analytics:
 ```javascript
 intk.init({
   session_length: 60, // Session duration is 60 minutes
+});
+```
+
+---
+
+## `referral_starts_new_session`
+
+```javascript
+referral_starts_new_session: false // default
+```
+
+Controls how referral traffic arriving **during an active session** is treated. Default is `false` — the legacy behaviour described under [`session_length`](#session_length) is preserved: a mid-session referral is ignored, `intk_current` is left untouched, no new touchpoint is appended, and the session counter keeps incrementing.
+
+Set this to `true` to make a mid-session referral **split the session**:
+
+- `intk_session` page counter resets to `1`
+- `intk_udata` visits counter is incremented
+- `intk_current` is overwritten with the new referral source
+- a new touchpoint is appended to `intk_first_add` / `intk_current_add` chain
+- `intk_first` (first-touch attribution) is **not** touched
+
+UTM, organic, in-app and typein detection are unaffected by this flag in both states.
+
+**Example:**
+
+```javascript
+intk.init({
+  referral_starts_new_session: true,
 });
 ```
 
@@ -290,30 +318,30 @@ Priority: `UTM > click ID > organic > IN-APP > referral > typein`. UTM, click ID
 When a User-Agent matches one of the patterns, the result is:
 
 ```js
-{ typ: 'in_app', src: 'instagram', mdm: 'in_app', cmp: '(none)', cnt: '(none)', trm: '(none)' }
+{ typ: 'in_app', src: 'instagram', mdm: 'social', cmp: '(none)', cnt: '(none)', trm: '(none)' }
 ```
 
 The library ships with a built-in pattern list, enabled by default:
 
-| Pattern (matched in User-Agent, case-insensitive) | `source`          |
-|---------------------------------------------------|-------------------|
-| `FBAN`, `FBAV`, `FB_IAB`                          | `facebook`        |
-| `Instagram`, `IGApp`                              | `instagram`       |
-| `TikTok`, `musical_ly`, `Aweme`                   | `tiktok`          |
-| `LinkedInApp`, `LIA`                              | `linkedin`        |
-| `TwitterAndroid`, `Twitter for ...`               | `twitter`         |
-| `Snapchat`                                        | `snapchat`        |
-| `Pinterest`                                       | `pinterest`       |
-| `TelegramBot`, `TgWebApp`, `Telegram/`            | `telegram`        |
-| `Viber`                                           | `viber`           |
-| `WhatsApp`                                        | `whatsapp`        |
-| `KAKAOTALK`                                       | `kakaotalk`       |
-| `Weibo`                                           | `weibo`           |
-| `MicroMessenger`                                  | `wechat`          |
-| `Line/`                                           | `line`            |
-| `wv ... Android` (generic Android webview)        | `android_webview` |
+| Pattern (matched in User-Agent, case-insensitive) | `source`          | default `medium` |
+|---------------------------------------------------|-------------------|------------------|
+| `FBAN`, `FBAV`, `FB_IAB`                          | `facebook`        | `social`         |
+| `Instagram`, `IGApp`                              | `instagram`       | `social`         |
+| `TikTok`, `musical_ly`, `Aweme`                   | `tiktok`          | `social`         |
+| `LinkedInApp`, `LIA`                              | `linkedin`        | `social`         |
+| `TwitterAndroid`, `Twitter for ...`               | `twitter`         | `social`         |
+| `Snapchat`                                        | `snapchat`        | `social`         |
+| `Pinterest`                                       | `pinterest`       | `social`         |
+| `TelegramBot`, `TgWebApp`, `Telegram/`            | `telegram`        | `social`         |
+| `Viber`                                           | `viber`           | `social`         |
+| `WhatsApp`                                        | `whatsapp`        | `social`         |
+| `KAKAOTALK`                                       | `kakaotalk`       | `social`         |
+| `Weibo`                                           | `weibo`           | `social`         |
+| `MicroMessenger`                                  | `wechat`          | `social`         |
+| `Line/`                                           | `line`            | `social`         |
+| `wv ... Android` (generic Android webview)        | `android_webview` | `in_app`         |
 
-Default `medium` is `'in_app'` for every entry.
+Social and messaging platforms use `medium: 'social'` so downstream tools (GA4, CRMs) route them to **Organic Social** rather than collapsing the visit into "Direct" / "Unassigned". The generic Android webview keeps the neutral `medium: 'in_app'` because the originating app is unknown. The `typ` field is always `'in_app'` either way — code that wants to distinguish webview traffic from "regular" social referral can check `intk.get.current.typ`.
 
 ### Add a custom pattern
 
@@ -339,7 +367,7 @@ intk.init({ in_app_browsers: false });
 
 ### Override the medium
 
-Provide your own `medium` per entry to use something other than `'in_app'`:
+Provide your own `medium` per entry to use something other than the defaults (`'social'` for the named platforms, `'in_app'` for the generic Android webview). User entries are matched **before** the defaults, so the same source name with a custom `medium` overrides the built-in:
 
 ```javascript
 intk.init({
@@ -1161,6 +1189,20 @@ console.log(attribution.credits);  // Array of touchpoints with credits
 ```
 
 **Supported models:** `'first'`, `'last'`, `'linear'`, `'u-shaped'`, `'time-decay'`
+
+### `intk.toJSON()`
+
+Return a deep-cloned snapshot of `intk.get` — every traffic, identity, session, touchpoint, click-id, and metadata field — ready to JSON-serialize and POST to your backend in one request:
+
+```javascript
+fetch('/api/attribution', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(intk),   // intk.toJSON() is called automatically
+});
+```
+
+Follows the standard JS `toJSON` convention, so `JSON.stringify(intk)` picks it up automatically. The returned object is a deep clone — safe to mutate without affecting library internals. Async fields (`analytics_ids`, async `pii_hashes`) only land after the configured `callback` fires a second time — call `intk.toJSON()` from inside `callback` to capture the fully-populated payload.
 
 ### `intk.setUserId(userId)`
 

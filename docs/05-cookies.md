@@ -105,8 +105,8 @@ Plain string value (no key=value structure).
 |--------|-------------|--------------------|
 | `intk_first`, `intk_first_add` | Set once | Never overwritten |
 | `intk_current`, `intk_current_add` | Set; may be updated by UTM/organic/referral (see attribution rules) | Updated on init and on `trackPageview` when source changes |
-| `intk_session` | Set (pgs=1) | Updated on each init/trackPageview (pgs incremented, cpg updated) |
-| `intk_udata` | Set (vst=1) | vst incremented when no active session; uip/uag updated |
+| `intk_session` | Set (pgs=1) | Updated on each init/trackPageview (pgs incremented, cpg updated). With `referral_starts_new_session: true`, a referral arriving mid-session resets pgs back to 1. |
+| `intk_udata` | Set (vst=1) | vst incremented when no active session (and also on a referral split when `referral_starts_new_session: true`); uip/uag updated |
 | `intk_promo` | Set once if config present | Not overwritten |
 | `intk_touchpoints` | New touchpoint appended when current source is updated | Appended on each significant source change (utm/organic/referral) |
 | `intk_click_ids` | From URL / existing cookie | Merged from URL on each load |

@@ -53,6 +53,41 @@ test.describe('Referral Traffic Detection', () => {
     expect(secondVisitData.first.src).toBe('example.com');
   });
 
+  test('should split session on mid-session referral when referral_starts_new_session is true', async ({ page, context }) => {
+    // The fixture must merge `window.__intkE2eConfig` into its `intk.init({...})`
+    // call so this test can flip the flag without touching the (gitignored)
+    // fixture file. If you see this test failing with the referral being
+    // ignored, update test/e2e-test-page.html to honour __intkE2eConfig.
+    await page.addInitScript(() => {
+      (window as any).__intkE2eConfig = { referral_starts_new_session: true };
+    });
+
+    // First visit with UTM — establishes the initial source + session.
+    await page.goto('/test/e2e-test-page.html?utm_source=google&utm_medium=cpc&utm_campaign=first');
+    await page.waitForFunction(() => window.intkInitialized === true, { timeout: 5000 });
+    const firstData = await page.evaluate(() => window.intkTestData);
+    expect(firstData.current.typ).toBe('utm');
+    expect(firstData.session.pgs).toBe(1);
+    expect(firstData.udata.vst).toBe(1);
+    const initialTouchpointCount = firstData.touchpoints.touchpoints.length;
+
+    await page.waitForTimeout(500);
+
+    // Mid-session referral arrives with the flag on — session should split.
+    await page.goto('/test/e2e-test-page.html', { referer: 'https://example.com/page' });
+    await page.waitForFunction(() => window.intkInitialized === true, { timeout: 5000 });
+    const secondData = await page.evaluate(() => window.intkTestData);
+
+    expect(secondData.current.typ).toBe('referral');
+    expect(secondData.current.src).toBe('example.com');
+    expect(secondData.session.pgs).toBe(1);            // page counter reset
+    expect(secondData.udata.vst).toBe(2);              // new visit counted
+    expect(secondData.touchpoints.touchpoints.length).toBe(initialTouchpointCount + 1);
+    // First-touch is untouched.
+    expect(secondData.first.typ).toBe('utm');
+    expect(secondData.first.cmp).toBe('first');
+  });
+
   test('should detect typein when no referrer', async ({ page }) => {
     await page.goto('/test/e2e-test-page.html');
     

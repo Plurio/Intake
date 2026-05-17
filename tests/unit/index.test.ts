@@ -571,13 +571,59 @@ describe('index (API compatibility)', () => {
       // First visit with gclid
       mockLocation('http://localhost/?gclid=old123');
       intk.init(CONSENT_GRANTED_CONFIG);
-      
+
       // Second visit with new gclid
       mockLocation('http://localhost/?gclid=new456');
       intk.init(CONSENT_GRANTED_CONFIG);
-      
+
       // New gclid should overwrite old one
       expect(intk.get.click_ids?.gclid).toBe('new456');
+    });
+  });
+
+  describe('intk.toJSON()', () => {
+    beforeEach(() => {
+      clearCookies();
+    });
+
+    it('should return a snapshot with the same shape as intk.get', () => {
+      mockLocation('http://localhost/?utm_source=google&utm_medium=cpc&utm_campaign=spring');
+      intk.init(CONSENT_GRANTED_CONFIG);
+      const snapshot = intk.toJSON();
+      expect(snapshot.current).toEqual(intk.get.current);
+      expect(snapshot.first).toEqual(intk.get.first);
+      expect(snapshot.session).toEqual(intk.get.session);
+      expect(snapshot.udata).toEqual(intk.get.udata);
+      expect(snapshot.touchpoints).toEqual(intk.get.touchpoints);
+    });
+
+    it('should return a deep clone — mutating snapshot must not affect intk.get', () => {
+      mockLocation('http://localhost/?utm_source=google&utm_medium=cpc');
+      intk.init(CONSENT_GRANTED_CONFIG);
+      const original = intk.get.current.src;
+      const snapshot = intk.toJSON();
+      snapshot.current.src = 'mutated';
+      expect(intk.get.current.src).toBe(original);
+      expect(intk.get.current.src).not.toBe('mutated');
+    });
+
+    it('should produce a value that is JSON-serializable', () => {
+      mockLocation('http://localhost/?utm_source=google&utm_medium=cpc');
+      intk.init(CONSENT_GRANTED_CONFIG);
+      const snapshot = intk.toJSON();
+      expect(() => JSON.stringify(snapshot)).not.toThrow();
+      const roundTripped = JSON.parse(JSON.stringify(snapshot));
+      expect(roundTripped.current.src).toBe(snapshot.current.src);
+    });
+
+    it('should be picked up automatically by JSON.stringify(intk)', () => {
+      mockLocation('http://localhost/?utm_source=google&utm_medium=cpc');
+      intk.init(CONSENT_GRANTED_CONFIG);
+      // JSON.stringify calls toJSON() on the receiver if it exists, so this
+      // should produce the same payload as JSON.stringify(intk.toJSON()).
+      const viaIntk = JSON.parse(JSON.stringify(intk));
+      const viaToJSON = JSON.parse(JSON.stringify(intk.toJSON()));
+      expect(viaIntk).toEqual(viaToJSON);
     });
   });
 });

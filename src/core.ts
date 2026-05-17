@@ -19,20 +19,25 @@ interface ClickIdPlatform {
  * "Twitter for") to avoid false positives in unrelated User-Agents.
  */
 export const DEFAULT_IN_APP_BROWSERS: InAppBrowserSource[] = [
-  { pattern: 'FBAN|FBAV|FB_IAB',                source: 'facebook'        },
-  { pattern: 'Instagram|IGApp',                  source: 'instagram'       },
-  { pattern: 'TikTok|musical_ly|Aweme',          source: 'tiktok'          },
-  { pattern: 'LinkedInApp|\\bLIA\\b',            source: 'linkedin'        },
-  { pattern: 'TwitterAndroid|Twitter for',       source: 'twitter'         },
-  { pattern: 'Snapchat',                         source: 'snapchat'        },
-  { pattern: 'Pinterest',                        source: 'pinterest'       },
-  { pattern: 'TelegramBot|TgWebApp|Telegram/',   source: 'telegram'        },
-  { pattern: 'Viber',                            source: 'viber'           },
-  { pattern: 'WhatsApp',                         source: 'whatsapp'        },
-  { pattern: 'KAKAOTALK',                        source: 'kakaotalk'       },
-  { pattern: 'Weibo',                            source: 'weibo'           },
-  { pattern: 'MicroMessenger',                   source: 'wechat'          },
-  { pattern: 'Line/',                            source: 'line'            },
+  // Social + messaging platforms get medium='social' so GA4 and similar tools
+  // route them to "Organic Social" (rather than collapsing utm_medium='in_app'
+  // into "Direct" / "Unassigned"). The traffic type stays `typ: 'in_app'`, so
+  // code that inspects `intk.get.current.typ` still gets the precise label.
+  { pattern: 'FBAN|FBAV|FB_IAB',                source: 'facebook',   medium: 'social' },
+  { pattern: 'Instagram|IGApp',                  source: 'instagram',  medium: 'social' },
+  { pattern: 'TikTok|musical_ly|Aweme',          source: 'tiktok',     medium: 'social' },
+  { pattern: 'LinkedInApp|\\bLIA\\b',            source: 'linkedin',   medium: 'social' },
+  { pattern: 'TwitterAndroid|Twitter for',       source: 'twitter',    medium: 'social' },
+  { pattern: 'Snapchat',                         source: 'snapchat',   medium: 'social' },
+  { pattern: 'Pinterest',                        source: 'pinterest',  medium: 'social' },
+  { pattern: 'TelegramBot|TgWebApp|Telegram/',   source: 'telegram',   medium: 'social' },
+  { pattern: 'Viber',                            source: 'viber',      medium: 'social' },
+  { pattern: 'WhatsApp',                         source: 'whatsapp',   medium: 'social' },
+  { pattern: 'KAKAOTALK',                        source: 'kakaotalk',  medium: 'social' },
+  { pattern: 'Weibo',                            source: 'weibo',      medium: 'social' },
+  { pattern: 'MicroMessenger',                   source: 'wechat',     medium: 'social' },
+  { pattern: 'Line/',                            source: 'line',       medium: 'social' },
+  // Generic Android webview — origin unknown, keep the neutral `'in_app'` medium.
   { pattern: '\\bwv\\b.*Android|Android.*\\bwv\\b', source: 'android_webview' }
 ];
 
@@ -231,7 +236,8 @@ export function detectTrafficSource(
   termParam: string | false = false,
   contentParam: string | false = false,
   promocodeConfig: PromocodeConfig | false = false,
-  inAppBrowsers: InAppBrowserSource[] = []
+  inAppBrowsers: InAppBrowserSource[] = [],
+  referralStartsNewSession: boolean = false
 ): TrafficSource {
   const params = getAllParams();
   
@@ -350,8 +356,11 @@ export function detectTrafficSource(
     };
   }
 
-  // Check referral traffic (only if there is an external referer and no active session)
-  if (hasExternalReferer && !hasSession) {
+  // Check referral traffic. By default, only when there is no active session
+  // (a referral arriving mid-session is ignored). When `referralStartsNewSession`
+  // is true, the referral is detected regardless of session state — the caller is
+  // expected to reset the session cookie in that case.
+  if (hasExternalReferer && (!hasSession || referralStartsNewSession)) {
     const referral = isReferral(referer, customReferrals);
     if (referral.isReferral) {
       return {

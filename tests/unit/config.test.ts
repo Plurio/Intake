@@ -346,6 +346,28 @@ describe('config', () => {
       });
     });
 
+    describe('referral_starts_new_session', () => {
+      it('should default to false when not specified', () => {
+        const config = resolveConfig();
+        expect(config.referral_starts_new_session).toBe(false);
+      });
+
+      it('should default to false for empty config object', () => {
+        const config = resolveConfig({});
+        expect(config.referral_starts_new_session).toBe(false);
+      });
+
+      it('should resolve to true when explicitly enabled', () => {
+        const config = resolveConfig({ referral_starts_new_session: true });
+        expect(config.referral_starts_new_session).toBe(true);
+      });
+
+      it('should resolve to false when explicitly disabled', () => {
+        const config = resolveConfig({ referral_starts_new_session: false });
+        expect(config.referral_starts_new_session).toBe(false);
+      });
+    });
+
     describe('in_app_browsers', () => {
       it('should populate defaults when option omitted', () => {
         const config = resolveConfig();

@@ -24,10 +24,28 @@ intk.init({ lifetime: 3 });
 - **Default:** `30`
 - **Unit:** Minutes
 
-Session duration. Affects only **referral** source overriding: a referral overwrites the previous source only when there is **no** active session. Within the same session, referral never overrides. UTM and organic always override; typein never overrides.
+Session duration. Affects only **referral** source overriding: a referral overwrites the previous source only when there is **no** active session. Within the same session, referral never overrides. UTM and organic always override; typein never overrides. To override this rule and let mid-session referrals split the session, see [`referral_starts_new_session`](#referral_starts_new_session).
 
 ```javascript
 intk.init({ session_length: 60 });
+```
+
+---
+
+### `referral_starts_new_session`
+
+- **Type:** `boolean`
+- **Default:** `false`
+
+Controls how a referral arriving **during an active session** is treated.
+
+- `false` (default): the referral is ignored. `intk_current` and the touchpoint chain are left untouched; the session counter keeps incrementing. This is the legacy behaviour.
+- `true`: the referral **splits the session**. `intk_session` resets to `1`, `intk_udata.vst` is incremented, `intk_current` is overwritten with the new referral source, and a new touchpoint is appended. `intk_first` is **not** modified.
+
+UTM, organic, in-app, and typein detection are unaffected in both states.
+
+```javascript
+intk.init({ referral_starts_new_session: true });
 ```
 
 ---
@@ -221,6 +239,8 @@ When a pattern matches, the result is:
 ```
 { typ: 'in_app', src: <source>, mdm: <medium ?? 'in_app'>, cmp: '(none)', cnt: '(none)', trm: '(none)' }
 ```
+
+Defaults: the 14 named social and messaging platforms (Instagram, Facebook, TikTok, LinkedIn, Twitter/X, Snapchat, Pinterest, Telegram, Viber, WhatsApp, KakaoTalk, Weibo, WeChat, Line) ship with `medium: 'social'` so GA4 and similar tools route them to the **Organic Social** channel. The generic Android webview entry has no medium override and falls back to `'in_app'`. The `typ` field is always `'in_app'`.
 
 `pattern` is a regular-expression source string (matched case-insensitively against the User-Agent). A plain substring like `'Instagram'` is a valid regex.
 
