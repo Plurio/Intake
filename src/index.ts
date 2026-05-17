@@ -308,6 +308,7 @@ const intk = {
     const termParam = resolvedConfig.term_param;
     const contentParam = resolvedConfig.content_param;
     const promocodeConfig = resolvedConfig.promocode;
+    const inAppBrowsers = resolvedConfig.in_app_browsers;
     const timezoneOffset = resolvedConfig.timezone_offset;
     const callback = config?.callback;
     const piiCollectionConfig = config?.pii_collection;
@@ -338,14 +339,15 @@ const intk = {
     
     // Detect new traffic source using the config
     const newSource = detectTrafficSource(
-      hasSession, 
-      referrals, 
-      organics, 
+      hasSession,
+      referrals,
+      organics,
       typeinAttributes,
       campaignParam,
       termParam,
       contentParam,
-      promocodeConfig
+      promocodeConfig,
+      inAppBrowsers
     );
     
     if (existingFirst) {
@@ -635,6 +637,7 @@ const intk = {
       const termParam = resolvedConfig.term_param;
       const contentParam = resolvedConfig.content_param;
       const promocodeConfig = resolvedConfig.promocode;
+      const inAppBrowsers = resolvedConfig.in_app_browsers;
       const callback = intk._config?.callback;
       const dataLayerEnabled = intk._dataLayerEnabled;
       
@@ -652,7 +655,8 @@ const intk = {
         campaignParam,
         termParam,
         contentParam,
-        promocodeConfig
+        promocodeConfig,
+        inAppBrowsers
       );
       
       // Get existing current source

@@ -21,6 +21,18 @@ export function mockReferrer(referrer: string) {
   });
 }
 
+// Capture the default jsdom user agent so beforeEach can restore it
+const DEFAULT_USER_AGENT = navigator.userAgent;
+
+// Helper to mock navigator.userAgent
+export function mockUserAgent(ua: string) {
+  Object.defineProperty(navigator, 'userAgent', {
+    writable: true,
+    configurable: true,
+    value: ua
+  });
+}
+
 // Helper to clear all cookies
 export function clearCookies() {
   document.cookie.split(';').forEach(cookie => {
@@ -36,5 +48,6 @@ beforeEach(() => {
   clearCookies();
   mockLocation('http://localhost/');
   mockReferrer('');
+  mockUserAgent(DEFAULT_USER_AGENT);
 });
 

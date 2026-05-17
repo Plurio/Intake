@@ -16,7 +16,9 @@ After `intk.init()` has run, you read data from `intk.get` and use the methods b
 | `intk.get.first_add` | `ExtraData` | Extra data for the first source. |
 
 **TrafficSource fields:** `typ` (traffic type), `src` (source), `mdm` (medium), `cmp` (campaign), `cnt` (content), `trm` (term).
-**Traffic types:** `'utm'`, `'organic'`, `'referral'`, `'typein'`.
+**Traffic types:** `'utm'`, `'organic'`, `'referral'`, `'in_app'`, `'typein'`.
+
+`'in_app'` is emitted when a visit has no UTM/click ID, no organic referrer, and no referral, but `navigator.userAgent` matches a known in-app browser (Instagram, Facebook, TikTok, Telegram, etc.). See [Configuration → `in_app_browsers`](./03-configuration.md#in_app_browsers).
 
 **ExtraData fields:** `fd` (date/time of visit), `ep` (entrance URL), `rf` (referrer URL).
 

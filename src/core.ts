@@ -1,4 +1,4 @@
-import type { TrafficSource, OrganicSource, ReferralSource, TypeinAttributes, PromocodeConfig } from './types';
+import type { TrafficSource, OrganicSource, ReferralSource, TypeinAttributes, PromocodeConfig, InAppBrowserSource } from './types';
 import { getAllParams, getHost, parseUrl } from './helpers/uri';
 
 /**
@@ -9,6 +9,32 @@ interface ClickIdPlatform {
   medium: string;
   campaign: string;
 }
+
+/**
+ * Default list of in-app browser (webview) patterns matched against
+ * navigator.userAgent. Order matters: specific app signatures come first,
+ * the generic Android webview pattern stays last so dedicated apps win.
+ *
+ * Short app names (Line, Twitter) use more specific markers (e.g. "Line/",
+ * "Twitter for") to avoid false positives in unrelated User-Agents.
+ */
+export const DEFAULT_IN_APP_BROWSERS: InAppBrowserSource[] = [
+  { pattern: 'FBAN|FBAV|FB_IAB',                source: 'facebook'        },
+  { pattern: 'Instagram|IGApp',                  source: 'instagram'       },
+  { pattern: 'TikTok|musical_ly|Aweme',          source: 'tiktok'          },
+  { pattern: 'LinkedInApp|\\bLIA\\b',            source: 'linkedin'        },
+  { pattern: 'TwitterAndroid|Twitter for',       source: 'twitter'         },
+  { pattern: 'Snapchat',                         source: 'snapchat'        },
+  { pattern: 'Pinterest',                        source: 'pinterest'       },
+  { pattern: 'TelegramBot|TgWebApp|Telegram/',   source: 'telegram'        },
+  { pattern: 'Viber',                            source: 'viber'           },
+  { pattern: 'WhatsApp',                         source: 'whatsapp'        },
+  { pattern: 'KAKAOTALK',                        source: 'kakaotalk'       },
+  { pattern: 'Weibo',                            source: 'weibo'           },
+  { pattern: 'MicroMessenger',                   source: 'wechat'          },
+  { pattern: 'Line/',                            source: 'line'            },
+  { pattern: '\\bwv\\b.*Android|Android.*\\bwv\\b', source: 'android_webview' }
+];
 
 const CLICK_ID_PLATFORMS: Record<string, ClickIdPlatform> = {
   // Google Ads identifiers
@@ -56,6 +82,30 @@ function findFirstClickId(params: Record<string, string>): { id: string; platfor
  */
 function hasAnyClickId(params: Record<string, string>): boolean {
   return Object.keys(CLICK_ID_PLATFORMS).some(clickId => !!params[clickId]);
+}
+
+/**
+ * Matches navigator.userAgent against the provided in-app browser patterns.
+ * Returns the first hit, or null if no pattern matches (or list is empty).
+ * Invalid regex entries are skipped silently.
+ */
+function detectInAppBrowser(
+  inAppBrowsers: InAppBrowserSource[]
+): { source: string; medium: string } | null {
+  if (!inAppBrowsers || !inAppBrowsers.length) return null;
+  const ua = (typeof navigator !== 'undefined' && navigator.userAgent) || '';
+  if (!ua) return null;
+  for (const browser of inAppBrowsers) {
+    if (!browser || !browser.pattern || !browser.source) continue;
+    try {
+      if (new RegExp(browser.pattern, 'i').test(ua)) {
+        return { source: browser.source, medium: browser.medium || 'in_app' };
+      }
+    } catch {
+      // Invalid regex — skip
+    }
+  }
+  return null;
 }
 
 function checkRefererHost(referer: string): boolean {
@@ -180,7 +230,8 @@ export function detectTrafficSource(
   campaignParam: string | false = false,
   termParam: string | false = false,
   contentParam: string | false = false,
-  promocodeConfig: PromocodeConfig | false = false
+  promocodeConfig: PromocodeConfig | false = false,
+  inAppBrowsers: InAppBrowserSource[] = []
 ): TrafficSource {
   const params = getAllParams();
   
@@ -268,7 +319,8 @@ export function detectTrafficSource(
   
   // Check organic traffic
   const referer = document.referrer;
-  if (referer && checkRefererHost(referer)) {
+  const hasExternalReferer = !!referer && checkRefererHost(referer);
+  if (hasExternalReferer) {
     const organic = isOrganic(referer, customOrganics);
     if (organic.isOrganic && organic.source) {
       return {
@@ -280,23 +332,39 @@ export function detectTrafficSource(
         trm: '(none)'
       };
     }
-    
-    // Check referral traffic (only if no active session)
-    if (!hasSession) {
-      const referral = isReferral(referer, customReferrals);
-      if (referral.isReferral) {
-        return {
-          typ: 'referral',
-          src: referral.source || '(none)',
-          mdm: referral.medium || 'referral',
-          cmp: '(none)',
-          cnt: referral.content || '(none)',
-          trm: '(none)'
-        };
-      }
+  }
+
+  // In-app browser detection — runs after organic and before referral.
+  // Catches webview visits where document.referrer is empty, app-controlled
+  // (e.g. instagram.com/l.facebook.com), or external — the UA marker is the
+  // more reliable signal.
+  const inApp = detectInAppBrowser(inAppBrowsers);
+  if (inApp) {
+    return {
+      typ: 'in_app',
+      src: inApp.source,
+      mdm: inApp.medium,
+      cmp: '(none)',
+      cnt: '(none)',
+      trm: '(none)'
+    };
+  }
+
+  // Check referral traffic (only if there is an external referer and no active session)
+  if (hasExternalReferer && !hasSession) {
+    const referral = isReferral(referer, customReferrals);
+    if (referral.isReferral) {
+      return {
+        typ: 'referral',
+        src: referral.source || '(none)',
+        mdm: referral.medium || 'referral',
+        cmp: '(none)',
+        cnt: referral.content || '(none)',
+        trm: '(none)'
+      };
     }
   }
-  
+
   // Return typein using attributes from config
   return {
     typ: 'typein',

@@ -281,6 +281,78 @@ intk.init({
 
 ---
 
+## `in_app_browsers`
+
+Detect traffic coming from in-app browsers (webviews) such as Instagram, Facebook, TikTok, Telegram. Without this layer, such visits land in `typein/(direct)` because they usually have no UTM, no click ID, and an empty or app-controlled `document.referrer`.
+
+Priority: `UTM > click ID > organic > IN-APP > referral > typein`. UTM, click IDs, and organic always take precedence. In-app **does** override referral — this matters because mobile webviews often set `document.referrer` to the app's own host (Instagram iOS sends `https://instagram.com/`), and without this layer those visits would be classified as `referral/instagram.com` instead of `in_app/instagram`.
+
+When a User-Agent matches one of the patterns, the result is:
+
+```js
+{ typ: 'in_app', src: 'instagram', mdm: 'in_app', cmp: '(none)', cnt: '(none)', trm: '(none)' }
+```
+
+The library ships with a built-in pattern list, enabled by default:
+
+| Pattern (matched in User-Agent, case-insensitive) | `source`          |
+|---------------------------------------------------|-------------------|
+| `FBAN`, `FBAV`, `FB_IAB`                          | `facebook`        |
+| `Instagram`, `IGApp`                              | `instagram`       |
+| `TikTok`, `musical_ly`, `Aweme`                   | `tiktok`          |
+| `LinkedInApp`, `LIA`                              | `linkedin`        |
+| `TwitterAndroid`, `Twitter for ...`               | `twitter`         |
+| `Snapchat`                                        | `snapchat`        |
+| `Pinterest`                                       | `pinterest`       |
+| `TelegramBot`, `TgWebApp`, `Telegram/`            | `telegram`        |
+| `Viber`                                           | `viber`           |
+| `WhatsApp`                                        | `whatsapp`        |
+| `KAKAOTALK`                                       | `kakaotalk`       |
+| `Weibo`                                           | `weibo`           |
+| `MicroMessenger`                                  | `wechat`          |
+| `Line/`                                           | `line`            |
+| `wv ... Android` (generic Android webview)        | `android_webview` |
+
+Default `medium` is `'in_app'` for every entry.
+
+### Add a custom pattern
+
+User-supplied entries are **prepended** to the defaults, so they win on conflict.
+
+```javascript
+intk.init({
+  in_app_browsers: [
+    { pattern: 'MyCustomApp', source: 'mycustom', medium: 'webview' }
+  ]
+});
+```
+
+`pattern` is a JavaScript regular-expression source string (matched case-insensitively). A plain substring like `'MyCustomApp'` is a valid regex.
+
+### Disable the layer
+
+Set `in_app_browsers: false` to disable the layer entirely — webview visits fall back to `referral` (if `document.referrer` is set) or `typein` as in earlier versions.
+
+```javascript
+intk.init({ in_app_browsers: false });
+```
+
+### Override the medium
+
+Provide your own `medium` per entry to use something other than `'in_app'`:
+
+```javascript
+intk.init({
+  in_app_browsers: [
+    { pattern: 'Instagram|IGApp', source: 'instagram', medium: 'social_webview' }
+  ]
+});
+```
+
+Because custom entries come first, this Instagram entry overrides the default Instagram entry below it.
+
+---
+
 ## `typein_attributes`
 
 ```javascript

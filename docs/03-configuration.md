@@ -203,6 +203,45 @@ intk.init({
 
 ---
 
+### `in_app_browsers`
+
+- **Type:** `Array<{ pattern: string, source: string, medium?: string }>` or `false`
+- **Default:** built-in list (Instagram, Facebook, TikTok, LinkedIn, Twitter/X, Snapchat, Pinterest, Telegram, Viber, WhatsApp, KakaoTalk, Weibo, WeChat, Line, generic Android webview). Your list is **prepended** to the defaults.
+
+Detects in-app browser (webview) traffic via `navigator.userAgent`. Priority order:
+
+```
+UTM > click ID > organic > IN-APP > referral > typein
+```
+
+UTM, click IDs, and organic always win. In-app **does** win over referral — this matters because mobile webviews often set `document.referrer` to the app's host (e.g. Instagram iOS sends `referrer=https://instagram.com/`), and without this layer the visit would be classified as `referral/instagram.com` instead of `in_app/instagram`.
+
+When a pattern matches, the result is:
+
+```
+{ typ: 'in_app', src: <source>, mdm: <medium ?? 'in_app'>, cmp: '(none)', cnt: '(none)', trm: '(none)' }
+```
+
+`pattern` is a regular-expression source string (matched case-insensitively against the User-Agent). A plain substring like `'Instagram'` is a valid regex.
+
+**Add a custom pattern (kept first, before defaults):**
+
+```javascript
+intk.init({
+  in_app_browsers: [
+    { pattern: 'MyCustomApp', source: 'mycustom', medium: 'webview' }
+  ]
+});
+```
+
+**Disable the layer (legacy behaviour — webview visits fall back to referral or typein):**
+
+```javascript
+intk.init({ in_app_browsers: false });
+```
+
+---
+
 ## Identity and analytics
 
 ### `analytics_ids`

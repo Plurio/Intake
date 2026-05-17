@@ -1,4 +1,5 @@
 export interface TrafficSource {
+  /** Traffic type: 'utm' | 'organic' | 'referral' | 'in_app' | 'typein'. */
   typ: string;
   src: string;
   mdm: string;
@@ -159,6 +160,27 @@ export interface OrganicSource {
 export interface ReferralSource {
   host: string;
   display?: string;
+  medium?: string;
+}
+
+/**
+ * Pattern describing an in-app browser (webview) to detect from navigator.userAgent.
+ *
+ * Used by the in-app browser detection layer in detectTrafficSource(), which fires
+ * only when traffic would otherwise be classified as 'typein' (no UTM, no click ID,
+ * no organic, no referral). When a pattern matches, the result is:
+ *   { typ: 'in_app', src: <source>, mdm: <medium ?? 'in_app'> }
+ *
+ * @example
+ * { pattern: 'Instagram|IGApp', source: 'instagram' }
+ * { pattern: 'FBAN|FBAV|FB_IAB', source: 'facebook', medium: 'in_app' }
+ */
+export interface InAppBrowserSource {
+  /** Regular expression source matched against navigator.userAgent (case-insensitive). A plain substring like 'Instagram' is a valid regex. */
+  pattern: string;
+  /** Source label, e.g. 'instagram', 'facebook'. */
+  source: string;
+  /** Medium label. Defaults to 'in_app'. */
   medium?: string;
 }
 
@@ -365,6 +387,18 @@ export interface IntkConfig {
   domain?: string | DomainConfig;
   organics?: OrganicSource[];
   referrals?: ReferralSource[];
+  /**
+   * In-app browser detection list. Detects webview traffic (Instagram, Facebook,
+   * TikTok, Telegram, etc.) via navigator.userAgent when no UTM/click ID/organic/
+   * referral signal is present. Without it, such visits fall into 'typein'.
+   *
+   * - `undefined` — use built-in defaults (Instagram, Facebook, TikTok, LinkedIn,
+   *   Twitter, Snapchat, Pinterest, Telegram, Viber, WhatsApp, KakaoTalk, Weibo,
+   *   WeChat, Line, generic Android webview).
+   * - `Array` — custom entries prepended to the built-in defaults.
+   * - `false` — disable the layer entirely.
+   */
+  in_app_browsers?: InAppBrowserSource[] | false;
   analytics_ids?: AnalyticsIdsConfig;
   pii_collection?: PiiCollectionConfig;
   user_id?: UserIdConfig;            // Configuration for automatic User ID retrieval
@@ -397,6 +431,8 @@ export interface ResolvedConfig {
   domain: DomainConfig;
   organics: OrganicSource[];
   referrals: ReferralSource[];
+  /** Always an array; empty when in_app_browsers === false. */
+  in_app_browsers: InAppBrowserSource[];
   link_decoration: ResolvedLinkDecorationConfig;
 }
 

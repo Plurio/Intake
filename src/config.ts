@@ -1,5 +1,6 @@
-import type { IntkConfig, ResolvedConfig, DomainConfig, TypeinAttributes, OrganicSource, ReferralSource, PromocodeConfig, ResolvedLinkDecorationConfig } from './types';
+import type { IntkConfig, ResolvedConfig, DomainConfig, TypeinAttributes, OrganicSource, ReferralSource, PromocodeConfig, ResolvedLinkDecorationConfig, InAppBrowserSource } from './types';
 import { getHost } from './helpers/uri';
+import { DEFAULT_IN_APP_BROWSERS } from './core';
 
 function isNumeric(v: unknown): v is number {
   return typeof v === 'number' && !isNaN(v);
@@ -122,6 +123,19 @@ export function resolveConfig(userConfig?: IntkConfig): ResolvedConfig {
   organics.push({ host: 'search.brave.com', param: 'q', display: 'brave' });
   organics.push({ host: 'baidu.com', param: 'wd', display: 'baidu' });
   
+  // In-app browsers — custom + defaults, or empty when explicitly disabled
+  const in_app_browsers: InAppBrowserSource[] = [];
+  if (user.in_app_browsers !== false) {
+    if (Array.isArray(user.in_app_browsers)) {
+      for (const browser of user.in_app_browsers) {
+        if (browser && browser.pattern && browser.source) {
+          in_app_browsers.push(browser);
+        }
+      }
+    }
+    in_app_browsers.push(...DEFAULT_IN_APP_BROWSERS);
+  }
+
   // Link decoration - disabled by default
   const link_decoration: ResolvedLinkDecorationConfig = {
     enabled: user.link_decoration?.enabled ?? false,
@@ -144,6 +158,7 @@ export function resolveConfig(userConfig?: IntkConfig): ResolvedConfig {
     domain,
     organics,
     referrals,
+    in_app_browsers,
     link_decoration
   };
 }

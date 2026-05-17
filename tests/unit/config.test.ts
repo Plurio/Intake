@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { resolveConfig } from '@/config';
+import { DEFAULT_IN_APP_BROWSERS } from '@/core';
 import type { IntkConfig } from '@/types';
 import { mockLocation } from '../setup';
 
@@ -342,6 +343,46 @@ describe('config', () => {
         // Should fall back to defaults
         expect(config.lifetime).toBe(259200);
         expect(config.session_length).toBe(30);
+      });
+    });
+
+    describe('in_app_browsers', () => {
+      it('should populate defaults when option omitted', () => {
+        const config = resolveConfig();
+        expect(config.in_app_browsers.length).toBeGreaterThan(0);
+        const sources = config.in_app_browsers.map(b => b.source);
+        expect(sources).toContain('instagram');
+        expect(sources).toContain('facebook');
+        expect(sources).toContain('tiktok');
+        expect(sources).toContain('telegram');
+      });
+
+      it('should return empty list when explicitly disabled', () => {
+        const config = resolveConfig({ in_app_browsers: false });
+        expect(config.in_app_browsers).toEqual([]);
+      });
+
+      it('should place custom patterns before defaults', () => {
+        const config = resolveConfig({
+          in_app_browsers: [{ pattern: 'MyCustomApp', source: 'mycustom' }]
+        });
+        expect(config.in_app_browsers[0].source).toBe('mycustom');
+        // Defaults still present after custom entries
+        const defaultSources = config.in_app_browsers.slice(1).map(b => b.source);
+        expect(defaultSources).toContain('instagram');
+      });
+
+      it('should filter out entries missing pattern or source', () => {
+        const config = resolveConfig({
+          in_app_browsers: [
+            { pattern: '', source: 'nopattern' } as any,
+            { pattern: 'X' } as any,
+            { pattern: 'GoodOne', source: 'good' }
+          ]
+        });
+        // Total = 1 valid custom entry + all defaults
+        expect(config.in_app_browsers.length).toBe(DEFAULT_IN_APP_BROWSERS.length + 1);
+        expect(config.in_app_browsers[0].source).toBe('good');
       });
     });
   });

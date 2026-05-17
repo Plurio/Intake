@@ -1,7 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { detectTrafficSource } from '@/core';
-import type { TrafficSource } from '@/types';
-import { mockLocation, mockReferrer } from '../setup';
+import { detectTrafficSource, DEFAULT_IN_APP_BROWSERS } from '@/core';
+import type { TrafficSource, InAppBrowserSource } from '@/types';
+import { mockLocation, mockReferrer, mockUserAgent } from '../setup';
+
+// Common in-app browser UA samples reused across tests
+const INSTAGRAM_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 Instagram 250.0.0.21.109';
+const FACEBOOK_UA = 'Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 [FBAN/FBIOS;FBAV/400.0.0.0.0]';
+const TIKTOK_UA = 'Mozilla/5.0 (Linux; Android 12; SM-G991B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile Safari/537.36 musical_ly_27.0.0 TikTok';
+const TELEGRAM_UA = 'Mozilla/5.0 (Linux; Android 11) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/108.0.0.0 Mobile TgWebApp/9.0.0';
+const CHROME_DESKTOP_UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 
 describe('core', () => {
   beforeEach(() => {
@@ -378,6 +385,150 @@ describe('core', () => {
         const result = detectTrafficSource();
         expect(result.src).toBe('hello world');
         expect(result.trm).toBe('test+term');
+      });
+    });
+
+    describe('in-app browser detection', () => {
+      const typein = { source: '(direct)', medium: '(none)' };
+
+      const callWithInApp = (
+        inApp: InAppBrowserSource[] = DEFAULT_IN_APP_BROWSERS,
+        hasSession = false
+      ) => detectTrafficSource(hasSession, [], [], typein, false, false, false, false, inApp);
+
+      it('should classify Instagram webview as in_app/instagram when no other signal', () => {
+        mockUserAgent(INSTAGRAM_UA);
+        const result = callWithInApp();
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('instagram');
+        expect(result.mdm).toBe('in_app');
+        expect(result.cmp).toBe('(none)');
+      });
+
+      it('should classify Facebook webview (FBAN) as facebook', () => {
+        mockUserAgent(FACEBOOK_UA);
+        const result = callWithInApp();
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('facebook');
+      });
+
+      it('should classify TikTok webview as tiktok', () => {
+        mockUserAgent(TIKTOK_UA);
+        const result = callWithInApp();
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('tiktok');
+      });
+
+      it('should classify Telegram WebApp as telegram', () => {
+        mockUserAgent(TELEGRAM_UA);
+        const result = callWithInApp();
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('telegram');
+      });
+
+      it('should leave standard desktop Chrome as typein', () => {
+        mockUserAgent(CHROME_DESKTOP_UA);
+        const result = callWithInApp();
+        expect(result.typ).toBe('typein');
+        expect(result.src).toBe('(direct)');
+      });
+
+      it('should let UTM win over in-app detection', () => {
+        mockUserAgent(INSTAGRAM_UA);
+        mockLocation('http://localhost/?utm_source=newsletter&utm_medium=email');
+        const result = callWithInApp();
+        expect(result.typ).toBe('utm');
+        expect(result.src).toBe('newsletter');
+      });
+
+      it('should let click ID win over in-app detection', () => {
+        mockUserAgent(INSTAGRAM_UA);
+        mockLocation('http://localhost/?gclid=abc123');
+        const result = callWithInApp();
+        expect(result.typ).toBe('utm');
+        expect(result.src).toBe('google');
+      });
+
+      it('should let organic search win over in-app detection', () => {
+        mockUserAgent(INSTAGRAM_UA);
+        mockReferrer('https://www.google.com/search?q=test');
+        const result = callWithInApp();
+        expect(result.typ).toBe('organic');
+        expect(result.src).toBe('google');
+      });
+
+      it('should win over referral when UA matches an in-app pattern', () => {
+        // Priority: organic > IN-APP > referral > typein. An Instagram webview
+        // visit with an external referrer is classified as in_app, not referral.
+        mockUserAgent(INSTAGRAM_UA);
+        mockReferrer('https://external.com/page');
+        const result = callWithInApp(DEFAULT_IN_APP_BROWSERS, false);
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('instagram');
+      });
+
+      it('should still produce referral when UA is not an in-app browser', () => {
+        // Confirms the referral path is intact for non-webview UAs.
+        mockUserAgent(CHROME_DESKTOP_UA);
+        mockReferrer('https://external.com/page');
+        const result = callWithInApp(DEFAULT_IN_APP_BROWSERS, false);
+        expect(result.typ).toBe('referral');
+        expect(result.src).toBe('external.com');
+      });
+
+      it('should classify as in_app regardless of hasSession', () => {
+        // In-app no longer depends on the referral path's hasSession gate.
+        mockUserAgent(INSTAGRAM_UA);
+        mockReferrer('https://external.com/page');
+        const result = callWithInApp(DEFAULT_IN_APP_BROWSERS, true);
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('instagram');
+      });
+
+      it('should classify Instagram webview with instagram.com referrer as in_app (real iOS case)', () => {
+        // Mirrors the production observation: Instagram iOS sends
+        // document.referrer='https://instagram.com/' from its webview.
+        mockUserAgent(INSTAGRAM_UA);
+        mockReferrer('https://instagram.com/');
+        const result = callWithInApp(DEFAULT_IN_APP_BROWSERS, false);
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('instagram');
+      });
+
+      it('should prefer custom pattern when prepended to defaults', () => {
+        mockUserAgent('Mozilla/5.0 MyCustomApp/1.0 ' + INSTAGRAM_UA);
+        const customFirst: InAppBrowserSource[] = [
+          { pattern: 'MyCustomApp', source: 'mycustom', medium: 'webview' },
+          ...DEFAULT_IN_APP_BROWSERS
+        ];
+        const result = callWithInApp(customFirst);
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('mycustom');
+        expect(result.mdm).toBe('webview');
+      });
+
+      it('should fall back to typein when in-app list is empty', () => {
+        mockUserAgent(INSTAGRAM_UA);
+        const result = detectTrafficSource(false, [], [], typein, false, false, false, false, []);
+        expect(result.typ).toBe('typein');
+      });
+
+      it('should skip invalid regex entries without throwing', () => {
+        mockUserAgent(INSTAGRAM_UA);
+        const list: InAppBrowserSource[] = [
+          { pattern: '[unclosed', source: 'broken' },
+          ...DEFAULT_IN_APP_BROWSERS
+        ];
+        const result = callWithInApp(list);
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('instagram');
+      });
+
+      it('should use case-insensitive matching', () => {
+        mockUserAgent('Mozilla/5.0 INSTAGRAM/1.0');
+        const result = callWithInApp();
+        expect(result.typ).toBe('in_app');
+        expect(result.src).toBe('instagram');
       });
     });
   });
