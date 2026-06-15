@@ -252,7 +252,7 @@ function convertAnalyticsIds(analyticsIds?: { [key: string]: string | undefined 
 /**
  * Builds intk_user_profile object from IntkData
  */
-export function buildUserProfile(data: IntkData, version: string = '2.0.0'): IntkUserProfile {
+export function buildUserProfile(data: IntkData, version: string = '2.2.0'): IntkUserProfile {
   // Build traffic attribution
   const firstVisit = convertToFirstVisitData(data.first, data.first_add);
   const currentVisit = convertToCurrentVisitData(
@@ -394,7 +394,7 @@ export function pushPhoneToDataLayer(profile: IntkUserProfile): void {
 /**
  * Main function to build and push user profile to dataLayer
  */
-export function sendToDataLayer(data: IntkData, version: string = '2.0.0'): void {
+export function sendToDataLayer(data: IntkData, version: string = '2.2.0'): void {
   const profile = buildUserProfile(data, version);
   pushToDataLayer(profile);
 }
@@ -402,7 +402,7 @@ export function sendToDataLayer(data: IntkData, version: string = '2.0.0'): void
 /**
  * Sends email capture event to dataLayer
  */
-export function sendEmailToDataLayer(data: IntkData, version: string = '2.0.0'): void {
+export function sendEmailToDataLayer(data: IntkData, version: string = '2.2.0'): void {
   const profile = buildUserProfile(data, version);
   pushEmailToDataLayer(profile);
 }
@@ -410,7 +410,7 @@ export function sendEmailToDataLayer(data: IntkData, version: string = '2.0.0'):
 /**
  * Sends phone capture event to dataLayer
  */
-export function sendPhoneToDataLayer(data: IntkData, version: string = '2.0.0'): void {
+export function sendPhoneToDataLayer(data: IntkData, version: string = '2.2.0'): void {
   const profile = buildUserProfile(data, version);
   pushPhoneToDataLayer(profile);
 }
