@@ -17,6 +17,7 @@ import { initParameterForwarding, readFromRuntimeMemory, readParametersFromURL }
 import { withdrawConsent as withdrawConsentInternal } from './privacy/consent-withdrawal';
 import { createDataLayerInterceptor, readConsentFromDataLayer } from './privacy/consent-listener';
 import { initLinkDecoration } from './privacy/link-decoration';
+import { buildBrowserInfo } from './browser/detect';
 
 function parseTrafficSource(container: string): TrafficSource {
   const data = parse(container);
@@ -69,7 +70,7 @@ function parsePromoData(container: string | null): { code?: string } {
 /**
  * Conditionally sets a cookie only if consent is granted
  * If consent is denied, this function does nothing (no cookies/localStorage/sessionStorage)
- * 
+ *
  * @param consentGranted - Whether consent is granted
  * @param name - Cookie name
  * @param value - Cookie value
@@ -107,10 +108,10 @@ const intk = {
   init: function(config?: IntkConfig) {
     // Resolve config with default values
     const resolvedConfig = resolveConfig(config);
-    
+
     // Check Consent Mode configuration
     const consentConfig = resolveConsentConfig(config?.consent_mode);
-    
+
     // Start with the assumption that consent = defaultConsent (safe default)
     // This is a temporary value that will be updated event-driven via dataLayer listener
     const initialConsentStatus: ConsentStatus = {
@@ -118,14 +119,14 @@ const intk = {
       ad_storage: consentConfig.defaultConsent
     };
     let operatingMode: OperatingMode = checkConsent(initialConsentStatus) ? 'persistent_storage' : 'parameter_forwarding';
-    
+
     // Store for use in other methods
     intk._consentStatus = initialConsentStatus;
     intk._operatingMode = operatingMode;
-    
+
     // Store url_passthrough setting (default: false)
     intk._urlPassthroughEnabled = config?.consent_mode?.url_passthrough === true;
-    
+
     // Initialize parameter forwarding if consent = denied and url_passthrough is enabled
     const initialConsentGranted = checkConsent(initialConsentStatus);
     if (!initialConsentGranted && intk._urlPassthroughEnabled) {
@@ -134,26 +135,26 @@ const intk = {
         intk._parameterForwardingWatcher();
         intk._parameterForwardingWatcher = null;
       }
-      
+
       // Initialize parameter forwarding mechanism (temporary, will be updated)
       intk._parameterForwardingWatcher = initParameterForwarding();
     }
-    
+
     // Consent change handler (used by dataLayer listener)
     const handleConsentChange = (status: ConsentStatus, isInitialLoad: boolean = false) => {
       const newConsentGranted = checkConsent(status);
       const oldConsentGranted = intk._consentStatus ? checkConsent(intk._consentStatus) : false;
-      
+
       // Skip if consent hasn't actually changed
-      if (intk._consentStatus && 
+      if (intk._consentStatus &&
           intk._consentStatus.analytics_storage === status.analytics_storage &&
           intk._consentStatus.ad_storage === status.ad_storage) {
         return;
       }
-      
+
       intk._consentStatus = status;
       intk._operatingMode = newConsentGranted ? 'persistent_storage' : 'parameter_forwarding';
-      
+
       // If consent was revoked (was granted, became denied)
       if (oldConsentGranted && !newConsentGranted) {
         // Clear all data
@@ -174,7 +175,7 @@ const intk = {
           intk._parameterForwardingWatcher();
           intk._parameterForwardingWatcher = null;
         }
-        
+
         // Enable link decoration on consent grant (if configured)
         if (!intk._linkDecorationWatcher && intk._config) {
           const linkDecorationConfig = resolveConfig(intk._config).link_decoration;
@@ -185,7 +186,7 @@ const intk = {
             );
           }
         }
-        
+
         // If this is the initial load and data is already processed, rewrite cookies with current data
         // This is needed because during first initialization we started with the assumption of denied,
         // but now received actual granted status and need to write cookies
@@ -196,13 +197,13 @@ const intk = {
             const config = resolveConfig(intk._config);
             const domainConfig = config.domain;
             const currentHost = getHost(window.location.href);
-            const cookieDomain = (!domainConfig.isolate && domainConfig.host && domainConfig.host !== currentHost) 
-              ? domainConfig.host 
+            const cookieDomain = (!domainConfig.isolate && domainConfig.host && domainConfig.host !== currentHost)
+              ? domainConfig.host
               : undefined;
             const lifetime = config.lifetime;
             const sessionLength = config.session_length;
             const timezoneOffset = config.timezone_offset ?? null;
-            
+
             // Rewrite all cookies with current data
             if (intk.get.first) {
               set('intk_first', packMain(intk.get.first), lifetime, cookieDomain);
@@ -234,20 +235,20 @@ const intk = {
         intk._parameterForwardingWatcher();
         intk._parameterForwardingWatcher = null;
       }
-      
+
       // Update metadata in intk.get
       if (intk.get.metadata) {
         intk.get.metadata.consent_status = status;
         intk.get.metadata.operating_mode = intk._operatingMode;
       }
-      
+
       // Update dataLayer if enabled
       // Only push to dataLayer if intk.get is properly initialized (has first source)
       if (intk._dataLayerEnabled && intk.get.first) {
         sendToDataLayer(intk.get);
       }
     };
-    
+
     // If Consent Mode is enabled, use the new dataLayer listener (event-driven approach)
     if (consentConfig.enabled) {
       // Clean up previous consent listener if exists
@@ -255,13 +256,13 @@ const intk = {
         intk._consentListenerCleanup();
         intk._consentListenerCleanup = null;
       }
-      
+
       // Clean up legacy polling if exists
       if (intk._consentPollingInterval !== null) {
         clearInterval(intk._consentPollingInterval);
         intk._consentPollingInterval = null;
       }
-      
+
       // Build consent listener config from consent_mode config
       const listenerConfig: ConsentListenerConfig = {
         enabled: true,
@@ -270,14 +271,14 @@ const intk = {
         custom_parser: config?.consent_mode?.custom_parser,
         field_mapping: config?.consent_mode?.field_mapping
       };
-      
+
       // First, check if consent is already in dataLayer (CMP may have loaded before Intake)
       const existingConsent = readConsentFromDataLayer(listenerConfig);
-      
+
       if (existingConsent) {
         handleConsentChange(existingConsent, true);
       }
-      
+
       // Set up dataLayer listener for future consent changes
       // This is event-driven, no polling needed!
       intk._consentListenerCleanup = createDataLayerInterceptor(
@@ -287,7 +288,7 @@ const intk = {
         listenerConfig
       );
     }
-    
+
     // Extract parameters from config
     const sessionLength = resolvedConfig.session_length;
     const userIp = resolvedConfig.user_ip;
@@ -295,10 +296,10 @@ const intk = {
     const domainConfig = resolvedConfig.domain;
     const currentHost = getHost(window.location.href);
     // Determine cookie domain: if isolate=true or domain matches current host, don't pass domain
-    const cookieDomain = (!domainConfig.isolate && domainConfig.host && domainConfig.host !== currentHost) 
-      ? domainConfig.host 
+    const cookieDomain = (!domainConfig.isolate && domainConfig.host && domainConfig.host !== currentHost)
+      ? domainConfig.host
       : undefined;
-    
+
     // Store cookieDomain for use in other methods
     intk._cookieDomain = cookieDomain;
     const typeinAttributes = resolvedConfig.typein_attributes;
@@ -317,11 +318,11 @@ const intk = {
     const dataLayerEnabled = config?.data_layer !== false; // Enabled by default
     intk._dataLayerEnabled = dataLayerEnabled; // Store for use in other methods
     intk._config = config || null; // Store config for use in trackPageview
-    
+
     // Check if there is an active session
     const existingSession = get('intk_session');
     const hasSession = !!existingSession;
-    
+
     // Check if cookies already exist
     const existingCurrent = get('intk_current');
     const existingFirst = get('intk_first');
@@ -329,7 +330,7 @@ const intk = {
     const existingFirstAdd = get('intk_first_add');
     const existingUdata = get('intk_udata');
     let existingPromocode = get('intk_promo');
-    
+
     let currentSource: TrafficSource;
     let firstSource: TrafficSource;
     let currentAdd: { fd: string; ep: string; rf: string };
@@ -337,7 +338,7 @@ const intk = {
     let sessionData: { pgs: number; cpg: string };
     let udata: { vst: number; uip: string; uag: string };
     let promoData: { code?: string };
-    
+
     // Detect new traffic source using the config
     const newSource = detectTrafficSource(
       hasSession,
@@ -370,13 +371,13 @@ const intk = {
       // Use packExtra to get date with timezone_offset applied
       const firstAddData = parseExtraData(packExtra(timezoneOffset));
       firstAdd = { fd: firstAddData.fd, ep: window.location.href, rf: document.referrer || '(none)' };
-      
+
       // Save first source using lifetime and domain from config
       // Only if consent granted (using current status from intk._consentStatus)
       setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_first', packMain(firstSource), lifetime, cookieDomain);
       setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_first_add', packExtra(timezoneOffset), lifetime, cookieDomain);
     }
-    
+
     // Current source update logic:
     // - UTM and Organic always update current
     // - Referral updates when the session is not continuing (no prior session, or
@@ -403,16 +404,16 @@ const intk = {
       currentSource = newSource;
       currentSourceUpdated = true;
     }
-    
+
     // Always update current_add (with timezone_offset applied)
     const currentAddData = parseExtraData(packExtra(timezoneOffset));
     currentAdd = { fd: currentAddData.fd, ep: window.location.href, rf: document.referrer || '(none)' };
-    
+
     // Save current using lifetime and domain from config
     // Only if consent granted (using current status from intk._consentStatus)
     setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_current', packMain(currentSource), lifetime, cookieDomain);
     setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_current_add', packExtra(timezoneOffset), lifetime, cookieDomain);
-    
+
     // Update session (pages_seen). If the session continues, increment the page
     // counter; otherwise start fresh at 1 (covers cold visits and referral splits).
     if (sessionContinues && existingSession) {
@@ -423,7 +424,7 @@ const intk = {
     }
     // Only if consent granted (using current status from intk._consentStatus)
     setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_session', packSession(sessionData.pgs), sessionLength, cookieDomain); // session_length minutes
-    
+
     // Update user data (visits)
     if (existingUdata) {
       const udataParsed = parseUserData(existingUdata);
@@ -446,7 +447,7 @@ const intk = {
     }
     // Only if consent granted (using current status from intk._consentStatus)
     setIfConsentGranted(checkConsent(intk._consentStatus!), 'intk_udata', packUser(udata.vst, udata.uip), lifetime, cookieDomain);
-    
+
     // Save promocode cookie (only if promocode is configured and cookie doesn't exist yet)
     // Only if consent granted (using current status from intk._consentStatus)
     if (promocodeConfig && !existingPromocode) {
@@ -454,10 +455,10 @@ const intk = {
       // Update existingPromocode for parsing
       existingPromocode = get('intk_promo');
     }
-    
+
     // Parse promocode data (always returns an object, even if empty)
     promoData = parsePromoData(existingPromocode);
-    
+
     // Add touchpoint to the chain only if currentSource was updated
     // (i.e., it's a new significant source, not the preserved old one)
     let touchpointChain;
@@ -467,14 +468,14 @@ const intk = {
       // Get existing chain without adding a new touchpoint
       touchpointChain = getTouchpointChain();
     }
-    
+
     // Collect click IDs from URL and save to cookie (only if consent granted)
     const consentGranted = checkConsent(intk._consentStatus!);
     const clickIds = collectClickIds(lifetime, cookieDomain, consentGranted);
-    
+
     // Initialize User ID (synchronously)
     const userId = initUserId(userIdConfig, lifetime, cookieDomain, consentGranted);
-    
+
     // Initialize intk.get with synchronous data
     intk.get = {
       current: currentSource,
@@ -490,9 +491,10 @@ const intk = {
       metadata: {
         consent_status: intk._consentStatus!,
         operating_mode: intk._operatingMode!
-      }
+      },
+      browser_info: buildBrowserInfo(resolvedConfig.in_app_browsers)
     };
-    
+
     // If PII collection is disabled, get existing hashes from cookie synchronously
     if (!piiCollectionConfig?.enabled) {
       const existingPiiHashes = getPiiHashes();
@@ -500,23 +502,23 @@ const intk = {
         intk.get.pii_hashes = existingPiiHashes;
       }
     }
-    
+
     // Call callback immediately with current data (without analytics IDs and PII if not yet collected)
     if (callback) {
       callback(intk.get);
     }
-    
+
     // Collect all async data and push to dataLayer once after full load
     const analyticsIdsConfig = config?.analytics_ids;
     const promises: Promise<any>[] = [];
-    
+
     // Promise for analytics IDs
     const analyticsIdsPromise = collectAnalyticsIds(analyticsIdsConfig, lifetime, cookieDomain).then((analyticsIds) => {
       intk.get.analytics_ids = analyticsIds;
       return analyticsIds;
     });
     promises.push(analyticsIdsPromise);
-    
+
     // Promise for PII (if enabled)
     if (piiCollectionConfig?.enabled) {
       // Stop previous tracking if active
@@ -524,13 +526,13 @@ const intk = {
         intk._piiWatcher();
         intk._piiWatcher = null;
       }
-      
+
       const piiPromise = collectPiiFromForms(piiCollectionConfig, lifetime, cookieDomain).then((piiHashes) => {
         intk.get.pii_hashes = piiHashes;
         return piiHashes;
       });
       promises.push(piiPromise);
-      
+
       // Start form watching for future changes
       // Pass callback for updating dataLayer on PII change
       intk._piiWatcher = watchForms(
@@ -540,7 +542,7 @@ const intk = {
         (piiHashes, changeType) => {
           // Update intk.get with new PII hashes
           intk.get.pii_hashes = piiHashes;
-          
+
           // Push update to dataLayer (if enabled)
           // Fire dedicated events: intk_email and/or intk_phone instead of intk_ready
           if (dataLayerEnabled) {
@@ -557,14 +559,14 @@ const intk = {
         }
       );
     }
-    
+
     // Wait for all async data to load and push to dataLayer once
     Promise.all(promises).then(() => {
       // Call callback again with full data
       if (callback) {
         callback(intk.get);
       }
-      
+
       // Push data to dataLayer once after full load (if enabled)
       if (dataLayerEnabled) {
         sendToDataLayer(intk.get);
@@ -579,7 +581,7 @@ const intk = {
         callback(intk.get);
       }
     });
-    
+
     // Initialize History API tracking for SPA (if enabled)
     if (config?.spa_tracking !== false) {
       intk._historyWatcher = trackHistoryAPI((url: string) => {
@@ -587,7 +589,7 @@ const intk = {
         intk.trackPageview(url);
       });
     }
-    
+
     // Initialize link decoration (if enabled)
     // Link decoration works only if consent is granted or consent mode is not enabled
     const linkDecorationConfig = resolvedConfig.link_decoration;
@@ -597,7 +599,7 @@ const intk = {
         intk._linkDecorationWatcher();
         intk._linkDecorationWatcher = null;
       }
-      
+
       // Initialize only if consent is granted or consent mode is not enabled
       const shouldInitLinkDecoration = !consentConfig.enabled || checkConsent(intk._consentStatus!);
       if (shouldInitLinkDecoration) {
@@ -614,11 +616,11 @@ const intk = {
       console.warn('Intake: trackPageview called before init. Call intk.init() first.');
       return;
     }
-    
+
     // Use the provided URL or current location
     // In SPA apps, the URL is usually already updated by the time trackPageview is called
     const targetUrl = url || window.location.href;
-    
+
     // Guard against duplicate calls for the same URL
     // Check if trackPageview was already called for this URL within the last 100ms
     if (intk._lastTrackedUrl === targetUrl) {
@@ -628,11 +630,11 @@ const intk = {
         return;
       }
     }
-    
+
     // Store info about the last call
     intk._lastTrackedUrl = targetUrl;
     (intk as any)._lastTrackedTime = Date.now();
-    
+
     try {
       // Get config
       const resolvedConfig = resolveConfig(intk._config);
@@ -640,8 +642,8 @@ const intk = {
       const lifetime = resolvedConfig.lifetime;
       const domainConfig = resolvedConfig.domain;
       const currentHost = getHost(window.location.href);
-      const cookieDomain = (!domainConfig.isolate && domainConfig.host && domainConfig.host !== currentHost) 
-        ? domainConfig.host 
+      const cookieDomain = (!domainConfig.isolate && domainConfig.host && domainConfig.host !== currentHost)
+        ? domainConfig.host
         : undefined;
       const referrals = resolvedConfig.referrals;
       const organics = resolvedConfig.organics;
@@ -701,24 +703,24 @@ const intk = {
         currentSource = newSource;
         currentSourceUpdated = true;
       }
-      
+
       // Update current_add (use the provided URL for ep)
       const timezoneOffset = resolvedConfig.timezone_offset;
       const currentAddData = parseExtraData(packExtra(timezoneOffset));
-      const currentAdd = { 
-        fd: currentAddData.fd, 
-        ep: targetUrl, 
-        rf: document.referrer || '(none)' 
+      const currentAdd = {
+        fd: currentAddData.fd,
+        ep: targetUrl,
+        rf: document.referrer || '(none)'
       };
-      
+
       // Get current consent status (without gtag — use stored status or default)
       const currentConsentStatus = intk._consentStatus || { analytics_storage: 'denied' as const, ad_storage: 'denied' as const };
       const consentGranted = checkConsent(currentConsentStatus);
-      
+
       // Save current (only if consent granted)
       setIfConsentGranted(consentGranted, 'intk_current', packMain(currentSource), lifetime, cookieDomain);
       setIfConsentGranted(consentGranted, 'intk_current_add', packExtra(timezoneOffset), lifetime, cookieDomain);
-      
+
       // Update session (pages_seen). Reset to 1 when the session does not
       // continue (cold visit OR referral split via referral_starts_new_session).
       let sessionData: { pgs: number; cpg: string };
@@ -729,7 +731,7 @@ const intk = {
         sessionData = { pgs: 1, cpg: targetUrl };
       }
       setIfConsentGranted(consentGranted, 'intk_session', packSession(sessionData.pgs), sessionLength, cookieDomain);
-      
+
       // Update touchpoint chain if currentSource was updated
       let touchpointChain;
       if (currentSourceUpdated) {
@@ -737,10 +739,10 @@ const intk = {
       } else {
         touchpointChain = getTouchpointChain();
       }
-      
+
       // Collect click IDs from current URL (window.location is already updated in SPA)
       const clickIds = collectClickIds(lifetime, cookieDomain, consentGranted);
-      
+
       // Update intk.get
       intk.get = {
         ...intk.get,
@@ -755,12 +757,12 @@ const intk = {
           operating_mode: consentGranted ? 'persistent_storage' : 'parameter_forwarding'
         }
       };
-      
+
       // Call callback
       if (callback) {
         callback(intk.get);
       }
-      
+
       // Push update to dataLayer (if enabled)
       if (dataLayerEnabled) {
         sendToDataLayer(intk.get);
@@ -794,10 +796,10 @@ const intk = {
     // Use cookieDomain from config if available
     const cookieDomain = intk._cookieDomain ?? undefined;
     setUserId(userId, lifetime, cookieDomain);
-    
+
     // Update intk.get
     intk.get.user_id = userId || undefined;
-    
+
     // Update dataLayer if enabled
     if (intk._dataLayerEnabled) {
       sendToDataLayer(intk.get);
@@ -810,46 +812,46 @@ const intk = {
       intk._consentListenerCleanup();
       intk._consentListenerCleanup = null;
     }
-    
+
     // Stop legacy polling if active
     if (intk._consentPollingInterval !== null) {
       clearInterval(intk._consentPollingInterval);
       intk._consentPollingInterval = null;
     }
-    
+
     // Stop parameter forwarding if active
     if (intk._parameterForwardingWatcher) {
       intk._parameterForwardingWatcher();
       intk._parameterForwardingWatcher = null;
     }
-    
+
     // Stop link decoration if active
     if (intk._linkDecorationWatcher) {
       intk._linkDecorationWatcher();
       intk._linkDecorationWatcher = null;
     }
-    
+
     // Clear all data
     withdrawConsentInternal(intk._cookieDomain || undefined);
-    
+
     // Update consent status
     intk._consentStatus = {
       analytics_storage: 'denied',
       ad_storage: 'denied'
     };
     intk._operatingMode = 'parameter_forwarding';
-    
+
     // Update metadata
     if (intk.get.metadata) {
       intk.get.metadata.consent_status = intk._consentStatus;
       intk.get.metadata.operating_mode = intk._operatingMode;
     }
-    
+
     // Enable parameter forwarding (if url_passthrough is enabled)
     if (intk._urlPassthroughEnabled) {
       intk._parameterForwardingWatcher = initParameterForwarding();
     }
-    
+
     // Update dataLayer if enabled
     if (intk._dataLayerEnabled) {
       sendToDataLayer(intk.get);

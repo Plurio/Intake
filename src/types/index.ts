@@ -62,28 +62,28 @@ export interface ClickIds {
   wbraid?: string;     // Google Ads (web-to-app conversions)
   gbraid?: string;     // Google Ads (app-to-web conversions, iOS)
   dclid?: string;      // Google Display & Video 360 (DV360)
-  
+
   // Facebook/Meta Ads
   fbclid?: string;     // Facebook Ads
-  
+
   // Microsoft Advertising
   msclkid?: string;    // Microsoft Advertising (Bing Ads)
-  
+
   // TikTok Ads
   ttclid?: string;     // TikTok Ads
-  
+
   // LinkedIn Ads
   li_fatid?: string;   // LinkedIn Ads
-  
+
   // Twitter/X Ads
   twclid?: string;     // Twitter Ads
-  
+
   // Snapchat Ads
   snapclid?: string;   // Snapchat Ads
-  
+
   // Pinterest Ads
   pclid?: string;      // Pinterest Ads
-  
+
   [key: string]: string | undefined;  // For other platforms
 }
 
@@ -91,13 +91,13 @@ export interface AnalyticsIds {
   // Google Analytics
   ga_client_id?: string;    // Google Analytics Client ID (from _ga cookie)
   ga_session_id?: string;    // Google Analytics Session ID (from _ga_* cookie)
-  
+
   // Amplitude
   amplitude_id?: string;     // Amplitude ID (from amp_* cookies)
-  
+
   // Mixpanel
   mixpanel_id?: string;      // Mixpanel distinct_id (from distinct_id cookie)
-  
+
   // Custom analytics IDs
   [key: string]: string | undefined;  // For custom configurations
 }
@@ -119,6 +119,19 @@ export interface IntkMetadata {
   operating_mode?: OperatingMode;
 }
 
+export interface BrowserInfo {
+  /** Raw navigator.userAgent string. */
+  user_agent: string;
+  /** Detected browser family: 'chrome' | 'safari' | 'firefox' | 'edge' | 'samsung' | 'opera' | 'in_app' | 'other' */
+  browser_type: string;
+  /** True when the visit originates from a social/messenger in-app webview. */
+  is_in_app: boolean;
+  /** Which app's webview was detected (e.g. 'instagram', 'facebook'). Present only when is_in_app = true. */
+  in_app_source?: string;
+  /** navigator.language, e.g. 'ru-RU', 'en-US'. */
+  language: string;
+}
+
 export interface IntkData {
   current: TrafficSource;
   current_add: ExtraData;
@@ -133,6 +146,7 @@ export interface IntkData {
   pii_hashes?: PiiHashes;  // Optional for backward compatibility
   user_id?: string;  // Optional User ID
   metadata?: IntkMetadata;  // Privacy-First Architecture metadata
+  browser_info?: BrowserInfo;  // Browser & UA information
 }
 
 // === Configuration Types ===
@@ -237,7 +251,7 @@ export interface ConsentFieldMapping {
 export interface ConsentListenerConfig {
   enabled: boolean;
   default_consent: 'granted' | 'denied';
-  
+
   /**
    * Custom event names to listen for in dataLayer.
    * Built-in parsers already support common CMPs like OneTrust, Cookiebot, etc.
@@ -245,7 +259,7 @@ export interface ConsentListenerConfig {
    * @example ['my_cmp_consent_updated', 'custom_consent_event']
    */
   event_names?: string[];
-  
+
   /**
    * Custom parser function for unknown CMPs.
    * Called for each dataLayer item. Return ConsentStatus if consent found, null otherwise.
@@ -260,21 +274,21 @@ export interface ConsentListenerConfig {
    * ```
    */
   custom_parser?: (item: any) => ConsentStatus | null;
-  
+
   /**
    * Mapping for custom consent field names.
    * Use with event_names to parse custom CMP events.
    * @example { analytics_storage: 'analyticsConsent', ad_storage: 'marketingConsent' }
    */
   field_mapping?: ConsentFieldMapping;
-  
+
   /**
    * @deprecated Use dataLayer listener instead (default behavior).
    * Whether to fall back to gtag polling if no dataLayer events are detected.
    * @default false
    */
   fallback_to_gtag?: boolean;
-  
+
   /**
    * @deprecated Use dataLayer listener instead (default behavior).
    * Maximum time to wait for gtag to load in milliseconds.
@@ -297,26 +311,26 @@ export interface LinkDecorationConfig {
    * Enable/disable link decoration. Default: false
    */
   enabled: boolean;
-  
+
   /**
    * List of domains to decorate links for.
    * Supports exact match ('partner.com') and wildcard subdomains ('*.partner.com').
    * @example ['partner.com', '*.example.org', 'app.mysite.com']
    */
   allowedDomains: string[];
-  
+
   /**
    * Whether to pass UTM parameters (utm_source, utm_medium, utm_campaign, utm_content, utm_term).
    * @default true
    */
   decorateUtm?: boolean;
-  
+
   /**
    * Whether to pass click IDs (gclid, fbclid, msclkid, ttclid, etc.).
    * @default true
    */
   decorateClickIds?: boolean;
-  
+
   /**
    * Additional custom parameters to add to decorated links.
    * @example { affiliate_id: 'abc123', partner: 'xyz' }
@@ -326,32 +340,32 @@ export interface LinkDecorationConfig {
 
 export interface ConsentModeConfig {
   enabled: boolean;
-  
+
   /**
    * Default consent status if consent cannot be detected.
    * @default 'denied'
    */
   default_consent?: 'granted' | 'denied';
-  
+
   /**
    * Custom event names to listen for in dataLayer.
    * Built-in parsers support common CMPs (OneTrust, Cookiebot, Axeptio, etc.).
    * @example ['my_cmp_consent_updated']
    */
   event_names?: string[];
-  
+
   /**
    * Custom parser function for unknown CMPs.
    * @example (item) => item.event === 'myEvent' ? { analytics_storage: 'granted', ad_storage: 'denied' } : null
    */
   custom_parser?: (item: any) => ConsentStatus | null;
-  
+
   /**
    * Mapping for custom consent field names in dataLayer events.
    * @example { analytics_storage: 'stats', ad_storage: 'marketing' }
    */
   field_mapping?: ConsentFieldMapping;
-  
+
   /**
    * Enable/disable URL passthrough when consent is denied.
    * Similar to Google Consent Mode's url_passthrough setting.
@@ -364,7 +378,7 @@ export interface ConsentModeConfig {
    * @see https://developers.google.com/tag-platform/security/guides/consent?hl=en#passthroughs
    */
   url_passthrough?: boolean;
-  
+
   /**
    * @deprecated The new dataLayer listener is the default and recommended approach.
    * This option is kept for backward compatibility.
@@ -445,4 +459,3 @@ export interface ResolvedConfig {
   referral_starts_new_session: boolean;
   link_decoration: ResolvedLinkDecorationConfig;
 }
-

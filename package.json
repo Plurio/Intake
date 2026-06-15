@@ -1,6 +1,6 @@
 {
   "name": "@plurio/intake",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Client-side traffic source detection, cookie-based attribution, and click ID tracking",
   "main": "dist/intake.js",
   "module": "dist/intake.esm.js",

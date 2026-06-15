@@ -34,6 +34,13 @@ export interface IntkUserProfile {
       [key: string]: string | undefined;
     };
   };
+  browser?: {
+    user_agent: string;
+    browser_type: string;
+    is_in_app: boolean;
+    in_app_source?: string;
+    language: string;
+  };
   metadata: {
     version: string;
     consent_status?: {
@@ -90,7 +97,7 @@ function convertDateToISO(dateStr: string): string {
   if (!dateStr || dateStr === '(none)') {
     return new Date().toISOString();
   }
-  
+
   // Try to parse the format "YYYY-MM-DD HH:MM:SS"
   const match = dateStr.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
   if (match) {
@@ -105,13 +112,13 @@ function convertDateToISO(dateStr: string): string {
     );
     return date.toISOString();
   }
-  
+
   // If already ISO format or other format, try to parse as-is
   const parsed = new Date(dateStr);
   if (!isNaN(parsed.getTime())) {
     return parsed.toISOString();
   }
-  
+
   // Fallback to current time
   return new Date().toISOString();
 }
@@ -291,7 +298,18 @@ export function buildUserProfile(data: IntkData, version: string = '2.0.0'): Int
 
   // Extract metadata from IntkData if available
   const metadata = data.metadata || {};
-  
+
+  // Build browser section from browser_info
+  const browser = data.browser_info
+    ? {
+        user_agent: data.browser_info.user_agent,
+        browser_type: data.browser_info.browser_type,
+        is_in_app: data.browser_info.is_in_app,
+        ...(data.browser_info.in_app_source ? { in_app_source: data.browser_info.in_app_source } : {}),
+        language: data.browser_info.language
+      }
+    : undefined;
+
   return {
     traffic_attribution: {
       first_visit: firstVisit,
@@ -299,6 +317,7 @@ export function buildUserProfile(data: IntkData, version: string = '2.0.0'): Int
       touchpoint_chain: touchpointChain
     },
     identity,
+    ...(browser ? { browser } : {}),
     metadata: {
       version,
       consent_status: metadata.consent_status,
@@ -395,4 +414,3 @@ export function sendPhoneToDataLayer(data: IntkData, version: string = '2.0.0'):
   const profile = buildUserProfile(data, version);
   pushPhoneToDataLayer(profile);
 }
-

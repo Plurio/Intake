@@ -30,6 +30,20 @@ After `intk.init()` has run, you read data from `intk.get` and use the methods b
 | `intk.get.udata` | `UserData` | `vst` (visit count), `uip` (IP if set), `uag` (user-agent). |
 | `intk.get.promo` | `PromoData` | `code` (promocode if configured). Always present; may be `{}`. |
 
+### Browser info
+
+`intk.get.browser_info` is always populated during `init()`. It does not require any configuration.
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `user_agent` | `string` | Raw `navigator.userAgent` string. |
+| `browser_type` | `string` | Browser family: `'chrome'`, `'safari'`, `'firefox'`, `'edge'`, `'samsung'`, `'opera'`, `'in_app'`, or `'other'`. |
+| `is_in_app` | `boolean` | `true` when the visit originates from a social/messenger webview (Instagram, Facebook, TikTok, etc.). |
+| `in_app_source` | `string \| undefined` | Which app's webview was detected (e.g. `'instagram'`, `'telegram'`). Present only when `is_in_app = true`. |
+| `language` | `string` | `navigator.language` value, e.g. `'ru-RU'`, `'en-US'`. |
+
+The same in-app browser patterns configured via [`in_app_browsers`](./03-configuration.md#in_app_browsers) are reused here — no extra configuration needed. If `in_app_browsers: false` is set, `is_in_app` is always `false`.
+
 ### Optional / feature-dependent
 
 | Property | Type | Description |

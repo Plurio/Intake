@@ -766,7 +766,23 @@ intk.init({
 // - intk_user_profile.identity.pii_hashes.phone_sha256
 // - intk_user_profile.traffic_attribution.first_visit.source
 // - intk_user_profile.traffic_attribution.current_visit.source
+// - intk_user_profile.browser.browser_type
+// - intk_user_profile.browser.is_in_app
+// - intk_user_profile.browser.in_app_source
+// - intk_user_profile.browser.language
 ```
+
+**`intk_user_profile.browser` object:**
+
+Always present in every event. No configuration required.
+
+| Field | Values | Description |
+|-------|--------|-------------|
+| `browser_type` | `'chrome'` `'safari'` `'firefox'` `'edge'` `'samsung'` `'opera'` `'in_app'` `'other'` | Detected browser family. |
+| `is_in_app` | `true` / `false` | Whether the visit comes from a social or messenger webview. |
+| `in_app_source` | `'instagram'` `'facebook'` `'tiktok'` `'telegram'` … | Which app's webview (present only when `is_in_app = true`). |
+| `language` | e.g. `'ru-RU'` `'en-US'` | `navigator.language` — browser/OS locale setting. |
+| `user_agent` | raw string | Full `navigator.userAgent` value. |
 
 ---
 
