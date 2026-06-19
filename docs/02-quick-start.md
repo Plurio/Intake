@@ -2,6 +2,8 @@
 
 Get Intake running with minimal setup.
 
+> **Skip the manual setup:** the [Configurator](../tools/configurator/) can generate your snippet or GTM container from a short interview — as a **skill** ([`SKILL.md`](../tools/configurator/SKILL.md)) in an agentic tool, or by pasting [`PROMPT.md`](../tools/configurator/PROMPT.md) into any chat assistant.
+
 ## 1. Load the script
 
 Choose one of:

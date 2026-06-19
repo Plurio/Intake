@@ -1,5 +1,7 @@
 # Intake Configuration
 
+> **Tip:** You don't have to write this config by hand. The [Configurator](tools/configurator/) generates a ready-to-paste snippet or GTM container from a short interview — use it as a **skill** ([`SKILL.md`](tools/configurator/SKILL.md)) in an agentic tool, or paste [`PROMPT.md`](tools/configurator/PROMPT.md) into any chat assistant.
+
 ## Installation
 
 ```html

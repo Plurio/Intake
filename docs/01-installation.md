@@ -2,6 +2,16 @@
 
 This page describes how to include Intake in your project.
 
+## Configurator (AI-assisted setup)
+
+Prefer not to hand-write your config? The **Intake Configurator** interviews you about your site and generates a ready-to-paste **standalone snippet** or a **GTM container JSON**, with sensible defaults and version pinning. It lives in [`tools/configurator/`](../tools/configurator/) and works three ways:
+
+- **As a skill** — for agentic tools (Claude Code, Cursor). Point the agent at [`SKILL.md`](../tools/configurator/SKILL.md); it runs the interview and calls `generate.py` to produce the output file.
+- **As a chat prompt** — for any chat assistant (ChatGPT, Gemini, Claude). Paste the contents of [`PROMPT.md`](../tools/configurator/PROMPT.md) as your first message; it runs the full interview and outputs the snippet or container — no local tooling required.
+- **As a CLI** — `python3 tools/configurator/generate.py --mode standalone|gtm --interview interview.json` (see the [configurator README](../tools/configurator/README.md)).
+
+To wire Intake up manually instead, use the options below.
+
 ## npm
 
 Install the package:

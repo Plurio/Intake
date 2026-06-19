@@ -1,5 +1,9 @@
 # Intake Installation
 
+## Configurator (generate your config automatically)
+
+The fastest way to set up Intake is the **Configurator** in [`tools/configurator/`](tools/configurator/): a short interview that produces a ready-to-paste **standalone snippet** or a **GTM container JSON**. Use it as a **skill** ([`tools/configurator/SKILL.md`](tools/configurator/SKILL.md)) inside an agentic tool (Claude Code, Cursor), as a **chat prompt** ([`tools/configurator/PROMPT.md`](tools/configurator/PROMPT.md)) in any assistant (ChatGPT, Gemini, Claude), or as a **CLI** (`python3 tools/configurator/generate.py …`). Prefer to wire it up manually? Continue below.
+
 ## Installation via npm
 
 ```bash
@@ -48,7 +52,7 @@ intk.init({
       console.log('Source:', data.current.src);
     }
   });
-  
+
   // Using the data
   const source = intk.get.current.src;
 </script>
@@ -167,4 +171,3 @@ console.log(intk.get.session);  // Session data
 ```
 
 For full configuration details, see [CONFIGURATION.md](./CONFIGURATION.md).
-

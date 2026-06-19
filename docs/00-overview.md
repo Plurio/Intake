@@ -33,3 +33,4 @@ Intake tracks the sources of your site's visitors and stores the data in cookies
 | [API and usage](04-api-and-usage.md) | `intk.get`, `trackPageview`, `getAttribution`, `setUserId`, `withdrawConsent` |
 | [Cookies](05-cookies.md) | Cookie names, formats, when each is set |
 | [Limitations](06-limitations.md) | Known limits and recommendations |
+| [Configurator](../tools/configurator/README.md) | Generate a snippet or GTM container via an AI interview — as a skill or a chat prompt |

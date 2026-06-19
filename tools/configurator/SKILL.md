@@ -61,7 +61,7 @@ Save answer to `mode` (`standalone` | `gtm`).
 
 > **How would you like to configure Intake?**
 > - **Quick setup** ← recommended — 4 essential questions, done in under a minute. Sensible defaults are applied for everything else.
-> - **Full setup** — go through all 22 parameters across 8 groups for complete control.
+> - **Full setup** — go through every available parameter across 8 groups for complete control.
 
 - **Quick setup** → go to **Step 2-Quick**, then skip to Step 3
 - **Full setup** → go to **Step 2-Full**, then proceed to Step 3
@@ -95,7 +95,7 @@ Ask one at a time. Save answers to `/tmp/intake_configurator.json`.
 - **Yes** → `"spa": true`
 - **No** → `"spa": false`
 
-Defaults applied silently: `data_layer: true`, `analytics_ids: { google_analytics: true }`, 7 social referrals, in-app browser detection enabled.
+Defaults applied silently: `data_layer: true`, `analytics_ids: { google_analytics: true }`, 7 social referrals (added by the configurator — not a library default), in-app browser detection enabled.
 
 → Proceed to Step 3.
 
@@ -222,7 +222,7 @@ Save: `"consent_default"` (`"denied"` | `"granted"`, default: `"denied"`)
 
 **D1 — Custom referral sources**
 
-> Intake includes 7 social networks by default (Facebook, Instagram, LinkedIn, Twitter/X, YouTube, TikTok). Do you need to add more referral sources?
+> This configurator adds 7 social networks (Facebook, Instagram, LinkedIn, Twitter/X, YouTube, TikTok) so their traffic is classified as `medium: social` (the library's own defaults are only `t.co` and `plus.url.google.com`). Do you need to add more referral sources?
 
 - **No** → use defaults only
 - **Yes** → for each additional source, ask: host, medium, display name
@@ -366,9 +366,9 @@ python3 "$SCRIPT_DIR/generate.py" \
   --interview /tmp/intake_configurator.json
 ```
 
-Output file:
-- Standalone → `/tmp/intake-snippet.html`
-- GTM → `/tmp/intake-gtm-container.json`
+Output file (written to the current directory):
+- Standalone → `intake-snippet.html`
+- GTM → `intake-gtm-container.json`
 
 If the user specified a callback (H1), remind them to add it manually to the generated file.
 
@@ -411,7 +411,7 @@ To apply the container:
 
 ## Parameter reference (fallback if GitHub unreachable)
 
-All 22 parameters supported by `@plurio/intake`:
+Parameters supported by `@plurio/intake`:
 
 | Parameter | Type | Default | Interview question |
 |---|---|---|---|
@@ -424,11 +424,11 @@ All 22 parameters supported by `@plurio/intake`:
 | `pii_collection` | object | — | A2 |
 | `analytics_ids` | object | — | C3 |
 | `data_layer` | boolean | true | C2 |
-| `spa_tracking` | boolean | — | C1 |
+| `spa_tracking` | boolean | true (library) | C1 |
 | `user_id` | object | — | B1 |
 | `user_ip` | string | — | B2 |
 | `promocode` | boolean/object | false | B3 |
-| `referrals` | array | 7 social | D1 |
+| `referrals` | array | 7 social (added by configurator) | D1 |
 | `organics` | array | predefined | D2 |
 | `typein_attributes` | object | direct/none | D3 |
 | `campaign_param` | string | — | D4 |

@@ -40,6 +40,14 @@ const medium = intk.get.current.mdm;
 const campaign = intk.get.current.cmp;
 ```
 
+## Configurator (AI-assisted setup)
+
+Prefer not to hand-write your config? The **Intake Configurator** interviews you about your site and generates a ready-to-paste **standalone snippet** or a **GTM container JSON** — with sensible defaults and version pinning. It lives in [`tools/configurator/`](tools/configurator/) and works three ways:
+
+- **As a skill** — for agentic tools (Claude Code, Cursor). Point the agent at [`tools/configurator/SKILL.md`](tools/configurator/SKILL.md); it runs the interview and calls `generate.py` to produce the output file.
+- **As a chat prompt** — for any chat assistant (ChatGPT, Gemini, Claude). Paste the contents of [`tools/configurator/PROMPT.md`](tools/configurator/PROMPT.md) as your first message; it runs the full interview and outputs the snippet or container — no local tooling required.
+- **As a CLI** — `python3 tools/configurator/generate.py --mode standalone|gtm --interview interview.json` (see [`tools/configurator/README.md`](tools/configurator/README.md)).
+
 ## Builds
 
 | File | Format | Use case |
@@ -83,6 +91,7 @@ Full documentation: [intake.plurio.ai](https://intake.plurio.ai)
 - [API & Usage](docs/04-api-and-usage.md)
 - [Cookies](docs/05-cookies.md)
 - [Limitations](docs/06-limitations.md)
+- [Configurator](tools/configurator/README.md) — generate a snippet or GTM container via an AI interview (skill + chat prompt)
 
 ## License
 

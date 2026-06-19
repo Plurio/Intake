@@ -14,7 +14,7 @@ The GTM container embeds the full library code inline — no runtime CDN depende
 ## Requirements
 
 - Python 3.9+
-- Internet access (to fetch the latest `@plurio/intake` build from jsDelivr at generation time)
+- Internet access at generation time — to resolve the latest release from npm (for version pinning) and, in `gtm` mode, to fetch the library build from jsDelivr for inlining. Offline, the tool falls back to `@latest` and the `gtm` container falls back to a CDN `<script src>`.
 
 No third-party Python packages required — only stdlib.
 
@@ -41,10 +41,10 @@ python3 generate.py --mode standalone --interview interview.json --preview
 **3. Generate the output file:**
 
 ```bash
-# Standalone snippet → ~/Downloads/intake-snippet.html
+# Standalone snippet → ./intake-snippet.html (current directory)
 python3 generate.py --mode standalone --interview interview.json
 
-# GTM container → ~/Downloads/intake-gtm-container.json
+# GTM container → ./intake-gtm-container.json (current directory)
 python3 generate.py --mode gtm --interview interview.json
 ```
 
@@ -52,6 +52,18 @@ python3 generate.py --mode gtm --interview interview.json
 
 ```bash
 python3 generate.py --mode gtm --interview interview.json --out /path/to/output.json
+```
+
+**Pin a specific library version** (otherwise the latest release is resolved from npm):
+
+```bash
+python3 generate.py --mode standalone --interview interview.json --version 2.2.0
+```
+
+## Tests
+
+```bash
+python3 -m unittest discover -s tools/configurator
 ```
 
 ## Interview file — all parameters
@@ -72,12 +84,12 @@ python3 generate.py --mode gtm --interview interview.json --out /path/to/output.
 | `pii_phone_selectors` | array | — | Custom CSS selectors for phone inputs |
 | `analytics_ga4` | boolean | true | Collect GA4 Client ID and Session ID |
 | `data_layer` | boolean | true | Push `intk_ready` event to GTM dataLayer |
-| `spa` | boolean | — | Enable SPA tracking via History API |
+| `spa` | boolean | `true` (library default) | SPA tracking via History API. Set `false` to disable on a non-SPA site — omitting the key leaves it ON |
 | `user_id_source` | string | — | User ID source: `"dataLayer"`, `"cookie"`, or `"localStorage"` |
 | `user_id_key` | string | — | Key name to read the user ID from |
 | `user_ip` | string | — | Visitor IP address (passed from backend) |
 | `promocode` | boolean/object | — | Promo code generation settings |
-| `custom_referrals` | array | — | Additional referral sources beyond the 7 social defaults |
+| `custom_referrals` | array | — | Additional referral sources beyond the 7 social sources this configurator adds |
 | `organics` | array | — | Custom organic (search engine) sources |
 | `typein_attributes` | object | — | Custom label for direct traffic |
 | `campaign_param` | string | — | Custom URL parameter as UTM campaign fallback |
@@ -90,7 +102,7 @@ python3 generate.py --mode gtm --interview interview.json --out /path/to/output.
 
 The following are included in every generated config without needing to specify them:
 
-- `referrals` — 7 social networks: Facebook, Instagram, LinkedIn, Twitter/X, YouTube, TikTok
+- `referrals` — 7 social networks (Facebook, Instagram, LinkedIn, Twitter/X, YouTube, TikTok). These are added *by this configurator*, not the library — its own defaults are only `t.co` and `plus.url.google.com`. Keep the array in your config to retain `medium: social` classification.
 - `analytics_ids: { google_analytics: true }` — GA4 Client ID + Session ID
 - `data_layer: true` — GTM dataLayer push
 

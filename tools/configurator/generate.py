@@ -31,6 +31,51 @@ SOCIAL_REFERRALS = [
     {"host": "tiktok.com",    "medium": "social", "display": "tiktok"},
 ]
 
+# Enums mirrored from src/types/index.ts (IntkConfig). Kept honest by test_generate.py.
+VALID_CONSENT_DEFAULT = {"denied", "granted"}
+VALID_USER_ID_SOURCE = {"dataLayer", "cookie", "localStorage", "function"}
+
+
+def validate_interview(interview):
+    """Lightweight, stdlib-only sanity checks. Returns a list of error strings.
+
+    Catches the mistakes a chat user or hand-written interview file is most
+    likely to make — bad enum values and malformed custom arrays — before they
+    silently produce a broken intk.init() config.
+    """
+    errors = []
+
+    cd = interview.get("consent_default")
+    if cd is not None and cd not in VALID_CONSENT_DEFAULT:
+        errors.append(
+            f"consent_default must be one of {sorted(VALID_CONSENT_DEFAULT)}, got {cd!r}"
+        )
+
+    src = interview.get("user_id_source")
+    if src not in (None, "", False):
+        if src not in VALID_USER_ID_SOURCE:
+            errors.append(
+                f"user_id_source must be one of {sorted(VALID_USER_ID_SOURCE)}, got {src!r}"
+            )
+        elif src in {"dataLayer", "cookie", "localStorage"} and not interview.get("user_id_key"):
+            errors.append(f"user_id_key is required when user_id_source is {src!r}")
+
+    iab = interview.get("in_app_browsers")
+    if isinstance(iab, list):
+        for i, b in enumerate(iab):
+            if not (isinstance(b, dict) and b.get("pattern") and b.get("source")):
+                errors.append(
+                    f"in_app_browsers[{i}] must be an object with non-empty 'pattern' and 'source'"
+                )
+
+    cr = interview.get("custom_referrals")
+    if isinstance(cr, list):
+        for i, r in enumerate(cr):
+            if not (isinstance(r, dict) and r.get("host")):
+                errors.append(f"custom_referrals[{i}] must be an object with a non-empty 'host'")
+
+    return errors
+
 
 def fetch_version():
     try:
@@ -97,8 +142,11 @@ def build_config(interview):
     config["data_layer"] = interview.get("data_layer", True)
 
     # --- SPA ---
-    if interview.get("spa"):
-        config["spa_tracking"] = True
+    # Library default is ON (index.ts: `if (config?.spa_tracking !== false)`), so
+    # answering "No" must emit `false` explicitly to actually disable it — omitting
+    # the key would leave SPA tracking running. Omit only when truly unspecified.
+    if interview.get("spa") is not None:
+        config["spa_tracking"] = bool(interview["spa"])
 
     # --- User ID ---
     if interview.get("user_id_source"):
@@ -268,7 +316,7 @@ def main():
     parser.add_argument("--fetch-version", action="store_true", help="Print latest NPM version and exit")
     parser.add_argument("--mode", choices=["standalone", "gtm"], help="Output mode")
     parser.add_argument("--interview", default="/tmp/intake_configurator.json", help="Path to interview JSON")
-    parser.add_argument("--version", help="Override library version (default: latest)")
+    parser.add_argument("--version", help="Pin library version (default: resolve latest release from npm)")
     parser.add_argument("--preview", action="store_true", help="Print only the intk.init() config block, no file output")
     parser.add_argument("--out", help="Output file path (overrides default)")
     args = parser.parse_args()
@@ -290,30 +338,34 @@ def main():
         print(f"Error: invalid JSON in {args.interview}: {e}", file=sys.stderr)
         sys.exit(1)
 
-    version = args.version or "latest"
+    errors = validate_interview(interview)
+    if errors:
+        for e in errors:
+            print(f"Error: {e}", file=sys.stderr)
+        sys.exit(1)
 
     if args.preview:
         config = build_config(interview)
         print(f"intk.init({format_config_js(config, indent=2)});")
         return
 
-    downloads = os.path.join(os.path.expanduser("~"), "Downloads")
+    # Resolve a concrete release so the standalone snippet pins to a real version
+    # instead of @latest — otherwise an upstream breaking change silently ships to
+    # every configured site. Falls back to "latest" only if npm is unreachable.
+    version = args.version or fetch_version()
+
     if args.mode == "standalone":
         output = generate_standalone(interview, version)
-        out_file = args.out or os.path.join(downloads, "intake-snippet.html")
-        with open(out_file, "w", encoding="utf-8") as f:
-            f.write(output + "\n")
-        print(f"Saved to: {out_file}")
-        print()
-        print(output)
+        out_file = args.out or "intake-snippet.html"
     else:
         output = generate_gtm_container(interview, version)
-        out_file = args.out or os.path.join(downloads, "intake-gtm-container.json")
-        with open(out_file, "w", encoding="utf-8") as f:
-            f.write(output + "\n")
-        print(f"Saved to: {out_file}")
-        print()
-        print(output)
+        out_file = args.out or "intake-gtm-container.json"
+
+    with open(out_file, "w", encoding="utf-8") as f:
+        f.write(output + "\n")
+    print(f"Saved to: {os.path.abspath(out_file)}")
+    print()
+    print(output)
 
 
 if __name__ == "__main__":

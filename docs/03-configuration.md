@@ -2,6 +2,8 @@
 
 Full reference for `intk.init(options)`. All options are optional.
 
+> **Tip:** Generate this config interactively with the [Configurator](../tools/configurator/) instead of writing it by hand — as a **skill** ([`SKILL.md`](../tools/configurator/SKILL.md)) in an agentic tool, or by pasting [`PROMPT.md`](../tools/configurator/PROMPT.md) into any chat assistant.
+
 ## Core options
 
 ### `lifetime`
